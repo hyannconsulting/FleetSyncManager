@@ -1,0 +1,29 @@
+@inherits LayoutComponentBase
+
+<div class="page">
+    <div class="sidebar">
+        <NavMenu />
+    </div>
+
+    <main>
+        <div class="top-row px-4 auth">
+            <div class="d-flex align-items-center">
+                <h6 class="mb-0 text-muted me-3">FleetSyncManager</h6>
+                <div class="ms-auto">
+                    <!-- TODO: Add authentication display -->
+                    <span class="badge bg-success">Connecté</span>
+                </div>
+            </div>
+        </div>
+
+        <article class="content px-4">
+            @Body
+        </article>
+    </main>
+</div>
+
+<div id="blazor-error-ui">
+    Une erreur s'est produite. Cette application peut ne plus répondre jusqu'à ce qu'elle soit rechargée.
+    <a href="" class="reload">⟳ Recharger</a>
+    <a class="dismiss">🗙</a>
+</div>

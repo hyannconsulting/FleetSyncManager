@@ -1,0 +1,23 @@
+<Router AppAssembly="@typeof(App).Assembly">
+    <Found Context="routeData">
+        <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
+    </Found>
+    <NotFound>
+        <PageTitle>Page non trouvée</PageTitle>
+        <LayoutView Layout="@typeof(MainLayout)">
+            <div class="d-flex flex-column align-items-center justify-content-center" style="min-height: 60vh;">
+                <div class="text-center">
+                    <i class="fas fa-exclamation-triangle fa-5x text-warning mb-4"></i>
+                    <h1 class="h3 mb-3">Page non trouvée</h1>
+                    <p class="text-muted mb-4">
+                        Désolé, nous n'avons pas trouvé la page que vous cherchez.
+                    </p>
+                    <a href="/" class="btn btn-primary">
+                        <i class="fas fa-home me-1"></i>
+                        Retour à l'accueil
+                    </a>
+                </div>
+            </div>
+        </LayoutView>
+    </NotFound>
+</Router>
