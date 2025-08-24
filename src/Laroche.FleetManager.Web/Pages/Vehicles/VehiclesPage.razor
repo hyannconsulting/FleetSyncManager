@@ -1,0 +1,468 @@
+@page "/vehicles"
+@using System.ComponentModel.DataAnnotations
+@using Microsoft.AspNetCore.Components.Forms
+@using MediatR
+@using Laroche.FleetManager.Application.Queries.Vehicles
+@using Laroche.FleetManager.Application.Commands.Vehicles
+@using Laroche.FleetManager.Application.DTOs
+@using Laroche.FleetManager.Application.Common
+@inject IMediator Mediator
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Véhicules</PageTitle>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-car me-2"></i>Gestion des Véhicules
+                    </h5>
+                    <button class="btn btn-primary" @onclick="ShowCreateModal">
+                        <i class="fas fa-plus me-1"></i>Nouveau Véhicule
+                    </button>
+                </div>
+                <div class="card-body">
+                    @if (isLoading)
+                    {
+                        <div class="text-center">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">Chargement...</span>
+                            </div>
+                        </div>
+                    }
+                    else if (pagedResult?.Items.Any() == true)
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Plaque</th>
+                                        <th>Marque</th>
+                                        <th>Modèle</th>
+                                        <th>Année</th>
+                                        <th>Statut</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var vehicle in pagedResult.Items)
+                                    {
+                                        <tr>
+                                            <td>@vehicle.LicensePlate</td>
+                                            <td>@vehicle.Brand</td>
+                                            <td>@vehicle.Model</td>
+                                            <td>@vehicle.Year</td>
+                                            <td>
+                                                <span class="badge bg-@(GetStatusBadgeClass(vehicle.Status))">
+                                                    @vehicle.Status
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <button class="btn btn-sm btn-outline-primary me-1" 
+                                                        @onclick="() => ShowEditModal(vehicle)">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button class="btn btn-sm btn-outline-danger" 
+                                                        @onclick="() => DeleteVehicle(vehicle.Id)">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Pagination -->
+                        @if (pagedResult.TotalPages > 1)
+                        {
+                            <nav>
+                                <ul class="pagination justify-content-center">
+                                    <li class="page-item @(currentPage == 1 ? "disabled" : "")">
+                                        <button class="page-link" @onclick="() => LoadVehicles(1)">Premier</button>
+                                    </li>
+                                    <li class="page-item @(currentPage == 1 ? "disabled" : "")">
+                                        <button class="page-link" @onclick="() => LoadVehicles(currentPage - 1)">Précédent</button>
+                                    </li>
+                                    
+                                    @for (int i = Math.Max(1, currentPage - 2); i <= Math.Min(pagedResult.TotalPages, currentPage + 2); i++)
+                                    {
+                                        int pageNumber = i;
+                                        <li class="page-item @(pageNumber == currentPage ? "active" : "")">
+                                            <button class="page-link" @onclick="() => LoadVehicles(pageNumber)">@pageNumber</button>
+                                        </li>
+                                    }
+                                    
+                                    <li class="page-item @(currentPage == pagedResult.TotalPages ? "disabled" : "")">
+                                        <button class="page-link" @onclick="() => LoadVehicles(currentPage + 1)">Suivant</button>
+                                    </li>
+                                    <li class="page-item @(currentPage == pagedResult.TotalPages ? "disabled" : "")">
+                                        <button class="page-link" @onclick="() => LoadVehicles(pagedResult.TotalPages)">Dernier</button>
+                                    </li>
+                                </ul>
+                            </nav>
+                        }
+                    }
+                    else
+                    {
+                        <div class="text-center">
+                            <p>Aucun véhicule trouvé.</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de création/édition -->
+@if (showModal)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        @(editingVehicle == null ? "Nouveau Véhicule" : "Modifier Véhicule")
+                    </h5>
+                    <button type="button" class="btn-close" @onclick="CloseModal"></button>
+                </div>
+                <div class="modal-body">
+                    <EditForm Model="vehicleForm" OnValidSubmit="SaveVehicle">
+                        <DataAnnotationsValidator />
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Plaque d'immatriculation *</label>
+                                    <InputText @bind-Value="vehicleForm.LicensePlate" class="form-control" />
+                                    <ValidationMessage For="() => vehicleForm.LicensePlate" />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Marque *</label>
+                                    <InputText @bind-Value="vehicleForm.Brand" class="form-control" />
+                                    <ValidationMessage For="() => vehicleForm.Brand" />
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Modèle *</label>
+                                    <InputText @bind-Value="vehicleForm.Model" class="form-control" />
+                                    <ValidationMessage For="() => vehicleForm.Model" />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Année *</label>
+                                    <InputNumber @bind-Value="vehicleForm.Year" class="form-control" />
+                                    <ValidationMessage For="() => vehicleForm.Year" />
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Statut *</label>
+                                    <InputSelect @bind-Value="vehicleForm.Status" class="form-select">
+                                        <option value="">Sélectionner...</option>
+                                        <option value="Active">Actif</option>
+                                        <option value="Maintenance">En maintenance</option>
+                                        <option value="OutOfOrder">Hors service</option>
+                                        <option value="Sold">Vendu</option>
+                                    </InputSelect>
+                                    <ValidationMessage For="() => vehicleForm.Status" />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Type de carburant</label>
+                                    <InputSelect @bind-Value="vehicleForm.FuelType" class="form-select">
+                                        <option value="">Sélectionner...</option>
+                                        <option value="Gasoline">Essence</option>
+                                        <option value="Diesel">Diesel</option>
+                                        <option value="Electric">Électrique</option>
+                                        <option value="Hybrid">Hybride</option>
+                                    </InputSelect>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Kilométrage</label>
+                                    <InputNumber @bind-Value="vehicleForm.Mileage" class="form-control" />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Date d'achat</label>
+                                    <InputDate @bind-Value="vehicleForm.PurchaseDate" class="form-control" />
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">VIN</label>
+                            <InputText @bind-Value="vehicleForm.VIN" class="form-control" />
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Notes</label>
+                            <InputTextArea @bind-Value="vehicleForm.Notes" class="form-control" rows="3" />
+                        </div>
+                        
+                        <div class="d-flex justify-content-end">
+                            <button type="button" class="btn btn-secondary me-2" @onclick="CloseModal">
+                                Annuler
+                            </button>
+                            <button type="submit" class="btn btn-primary" disabled="@isSaving">
+                                @if (isSaving)
+                                {
+                                    <span class="spinner-border spinner-border-sm me-1"></span>
+                                }
+                                @(editingVehicle == null ? "Créer" : "Modifier")
+                            </button>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private PagedResult<VehicleDto>? pagedResult;
+    private bool isLoading = true;
+    private bool isSaving = false;
+    private bool showModal = false;
+    private int currentPage = 1;
+    private int pageSize = 10;
+    
+    private VehicleDto? editingVehicle;
+    private VehicleForm vehicleForm = new();
+    
+    public class VehicleForm
+    {
+        [Required(ErrorMessage = "La plaque d'immatriculation est requise")]
+        [StringLength(20, ErrorMessage = "La plaque ne peut pas dépasser 20 caractères")]
+        public string LicensePlate { get; set; } = "";
+        
+        [Required(ErrorMessage = "La marque est requise")]
+        [StringLength(50, ErrorMessage = "La marque ne peut pas dépasser 50 caractères")]
+        public string Brand { get; set; } = "";
+        
+        [Required(ErrorMessage = "Le modèle est requis")]
+        [StringLength(50, ErrorMessage = "Le modèle ne peut pas dépasser 50 caractères")]
+        public string Model { get; set; } = "";
+        
+        [Required(ErrorMessage = "L'année est requise")]
+        [Range(1900, 2050, ErrorMessage = "L'année doit être entre 1900 et 2050")]
+        public int Year { get; set; } = DateTime.Now.Year;
+        
+        [Required(ErrorMessage = "Le statut est requis")]
+        public string Status { get; set; } = "";
+        
+        public string? FuelType { get; set; }
+        public int? Mileage { get; set; }
+        public DateTime? PurchaseDate { get; set; }
+        public string? VIN { get; set; }
+        public string? Notes { get; set; }
+    }
+    
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadVehicles();
+    }
+    
+    private async Task LoadVehicles(int page = 1)
+    {
+        isLoading = true;
+        currentPage = page;
+        
+        try
+        {
+            var query = new GetVehiclesQuery
+            {
+                Page = currentPage,
+                PageSize = pageSize
+            };
+            
+            var result = await Mediator.Send(query);
+            
+            if (result.IsSuccess && result.Value != null)
+            {
+                pagedResult = result.Value;
+            }
+            else
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "Erreur lors du chargement des véhicules");
+            }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Erreur: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+    
+    private void ShowCreateModal()
+    {
+        editingVehicle = null;
+        vehicleForm = new VehicleForm();
+        showModal = true;
+    }
+    
+    private void ShowEditModal(VehicleDto vehicle)
+    {
+        editingVehicle = vehicle;
+        vehicleForm = new VehicleForm
+        {
+            LicensePlate = vehicle.LicensePlate,
+            Brand = vehicle.Brand,
+            Model = vehicle.Model,
+            Year = vehicle.Year,
+            Status = vehicle.Status,
+            FuelType = vehicle.FuelType,
+            Mileage = vehicle.Mileage,
+            PurchaseDate = vehicle.PurchaseDate,
+            VIN = vehicle.VIN,
+            Notes = vehicle.Notes
+        };
+        showModal = true;
+    }
+    
+    private void CloseModal()
+    {
+        showModal = false;
+        editingVehicle = null;
+        vehicleForm = new VehicleForm();
+    }
+    
+    private async Task SaveVehicle()
+    {
+        isSaving = true;
+        StateHasChanged();
+        
+        try
+        {
+            if (editingVehicle == null)
+            {
+                // Création
+                var command = new CreateVehicleCommand
+                {
+                    LicensePlate = vehicleForm.LicensePlate,
+                    Brand = vehicleForm.Brand,
+                    Model = vehicleForm.Model,
+                    Year = vehicleForm.Year,
+                    Status = vehicleForm.Status,
+                    FuelType = vehicleForm.FuelType,
+                    Mileage = vehicleForm.Mileage,
+                    PurchaseDate = vehicleForm.PurchaseDate,
+                    VIN = vehicleForm.VIN,
+                    Notes = vehicleForm.Notes
+                };
+                
+                var result = await Mediator.Send(command);
+                
+                if (result.IsSuccess)
+                {
+                    await JSRuntime.InvokeVoidAsync("alert", "Véhicule créé avec succès");
+                    CloseModal();
+                    await LoadVehicles(currentPage);
+                }
+                else
+                {
+                    await JSRuntime.InvokeVoidAsync("alert", "Erreur lors de la création du véhicule");
+                }
+            }
+            else
+            {
+                // Modification
+                var command = new UpdateVehicleCommand
+                {
+                    Id = editingVehicle.Id,
+                    LicensePlate = vehicleForm.LicensePlate,
+                    Brand = vehicleForm.Brand,
+                    Model = vehicleForm.Model,
+                    Year = vehicleForm.Year,
+                    Status = vehicleForm.Status,
+                    FuelType = vehicleForm.FuelType,
+                    Mileage = vehicleForm.Mileage,
+                    PurchaseDate = vehicleForm.PurchaseDate,
+                    VIN = vehicleForm.VIN,
+                    Notes = vehicleForm.Notes
+                };
+                
+                var result = await Mediator.Send(command);
+                
+                if (result.IsSuccess)
+                {
+                    await JSRuntime.InvokeVoidAsync("alert", "Véhicule modifié avec succès");
+                    CloseModal();
+                    await LoadVehicles(currentPage);
+                }
+                else
+                {
+                    await JSRuntime.InvokeVoidAsync("alert", "Erreur lors de la modification du véhicule");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Erreur: {ex.Message}");
+        }
+        finally
+        {
+            isSaving = false;
+            StateHasChanged();
+        }
+    }
+    
+    private async Task DeleteVehicle(int id)
+    {
+        if (await JSRuntime.InvokeAsync<bool>("confirm", "Êtes-vous sûr de vouloir supprimer ce véhicule ?"))
+        {
+            try
+            {
+                var command = new DeleteVehicleCommand { Id = id };
+                var result = await Mediator.Send(command);
+                
+                if (result.IsSuccess)
+                {
+                    await JSRuntime.InvokeVoidAsync("alert", "Véhicule supprimé avec succès");
+                    await LoadVehicles(currentPage);
+                }
+                else
+                {
+                    await JSRuntime.InvokeVoidAsync("alert", "Erreur lors de la suppression du véhicule");
+                }
+            }
+            catch (Exception ex)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", $"Erreur: {ex.Message}");
+            }
+        }
+    }
+    
+    private static string GetStatusBadgeClass(string status) => status?.ToLower() switch
+    {
+        "active" => "success",
+        "maintenance" => "warning",
+        "outoforder" => "danger",
+        "sold" => "secondary",
+        _ => "secondary"
+    };
+}

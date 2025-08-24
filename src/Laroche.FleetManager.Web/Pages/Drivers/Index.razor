@@ -1,0 +1,633 @@
+@page "/drivers"
+@using MediatR
+@using Laroche.FleetManager.Application.Queries.Drivers
+@using Laroche.FleetManager.Application.Commands.Drivers
+@using System.ComponentModel.DataAnnotations
+@inject IMediator Mediator
+@inject IJSRuntime JS
+
+<PageTitle>Gestion des Conducteurs - FleetSyncManager</PageTitle>
+
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="h3 text-success">
+                    <i class="fas fa-users"></i> Gestion des Conducteurs
+                </h1>
+                <button class="btn btn-success" @onclick="OpenCreateModal">
+                    <i class="fas fa-plus"></i> Ajouter un conducteur
+                </button>
+            </div>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(alertMessage))
+    {
+        <div class="row mb-3">
+            <div class="col-12">
+                <div class="alert @(alertType == "success" ? "alert-success" : "alert-danger") alert-dismissible fade show">
+                    <i class="fas @(alertType == "success" ? "fa-check-circle" : "fa-exclamation-circle")"></i>
+                    @alertMessage
+                    <button type="button" class="btn-close" @onclick="ClearAlert"></button>
+                </div>
+            </div>
+        </div>
+    }
+
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <div class="input-group">
+                <span class="input-group-text"><i class="fas fa-search"></i></span>
+                <input type="text" class="form-control" placeholder="Rechercher par nom, email, permis..."
+                       @bind="searchTerm" @onkeypress="OnSearchKeyPress" />
+                <button class="btn btn-outline-secondary" @onclick="LoadDrivers">Rechercher</button>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <select class="form-select" @bind="statusFilter" @onchange="LoadDrivers">
+                <option value="">Tous les statuts</option>
+                <option value="Active">Actif</option>
+                <option value="Inactive">Inactif</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <select class="form-select" @bind="pageSize" @onchange="LoadDrivers">
+                <option value="10">10 par page</option>
+                <option value="25">25 par page</option>
+                <option value="50">50 par page</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            @if (isLoading)
+            {
+                <div class="text-center p-4">
+                    <div class="spinner-border text-success" role="status">
+                        <span class="visually-hidden">Chargement...</span>
+                    </div>
+                    <p class="mt-2">Chargement des conducteurs...</p>
+                </div>
+            }
+            else if (drivers?.Any() == true)
+            {
+                <div class="card border-0 shadow-sm">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th><i class="fas fa-user me-2"></i>Nom</th>
+                                    <th><i class="fas fa-envelope me-2"></i>Contact</th>
+                                    <th><i class="fas fa-id-card me-2"></i>Permis</th>
+                                    <th><i class="fas fa-calendar me-2"></i>Embauche</th>
+                                    <th><i class="fas fa-car me-2"></i>Véhicules</th>
+                                    <th><i class="fas fa-info-circle me-2"></i>Statut</th>
+                                    <th class="text-center"><i class="fas fa-cogs me-2"></i>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var driver in drivers)
+                                {
+                                    <tr>
+                                        <td>
+                                            <div>
+                                                <strong class="text-success">@driver.FullName</strong>
+                                                <br><small class="text-muted">@driver.Email</small>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            @if (!string.IsNullOrEmpty(driver.PhoneNumber))
+                                            {
+                                                <i class="fas fa-phone me-1"></i>@driver.PhoneNumber
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">Non renseigné</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            <div>
+                                                <span class="badge bg-primary">@driver.LicenseType</span>
+                                                <br><small class="text-muted">@driver.LicenseNumber</small>
+                                                <br><small class="@(driver.LicenseExpiryDate < DateTime.Today.AddDays(30) ? "text-danger" : "text-muted")">
+                                                    Expire: @driver.LicenseExpiryDate.ToShortDateString()
+                                                </small>
+                                            </div>
+                                        </td>
+                                        <td>@driver.HireDate.ToShortDateString()</td>
+                                        <td>
+                                            @if (driver.AssignedVehicles?.Any() == true)
+                                            {
+                                                <div class="d-flex flex-wrap gap-1">
+                                                    @foreach (var vehicle in driver.AssignedVehicles.Take(2))
+                                                    {
+                                                        <span class="badge bg-info">@vehicle</span>
+                                                    }
+                                                    @if (driver.AssignedVehicles.Count > 2)
+                                                    {
+                                                        <span class="badge bg-secondary">+@(driver.AssignedVehicles.Count - 2)</span>
+                                                    }
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-secondary">Aucun</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            <span class="badge @(driver.IsActive ? "bg-success" : "bg-secondary")">
+                                                @(driver.IsActive ? "Actif" : "Inactif")
+                                            </span>
+                                            @if (driver.LicenseExpiryDate < DateTime.Today)
+                                            {
+                                                <br><span class="badge bg-danger mt-1">Permis expiré</span>
+                                            }
+                                            else if (driver.LicenseExpiryDate < DateTime.Today.AddDays(30))
+                                            {
+                                                <br><span class="badge bg-warning mt-1">Permis bientôt expiré</span>
+                                            }
+                                        </td>
+                                        <td class="text-center">
+                                            <div class="btn-group" role="group">
+                                                <button class="btn btn-sm btn-outline-info" 
+                                                        @onclick="() => ViewDriver(driver)" 
+                                                        title="Voir les détails">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                                <button class="btn btn-sm btn-outline-warning" 
+                                                        @onclick="() => EditDriver(driver)" 
+                                                        title="Modifier">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button class="btn btn-sm btn-outline-danger" 
+                                                        @onclick="() => ConfirmDelete(driver)" 
+                                                        title="Supprimer">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Pagination -->
+                @if (pagedResult != null && pagedResult.TotalPages > 1)
+                {
+                    <nav class="mt-4">
+                        <ul class="pagination justify-content-center">
+                            <li class="page-item @(currentPage <= 1 ? "disabled" : "")">
+                                <button class="page-link" @onclick="() => LoadPage(currentPage - 1)">Précédent</button>
+                            </li>
+                            
+                            @for (int i = Math.Max(1, currentPage - 2); i <= Math.Min(pagedResult.TotalPages, currentPage + 2); i++)
+                            {
+                                int pageNum = i;
+                                <li class="page-item @(currentPage == i ? "active" : "")">
+                                    <button class="page-link" @onclick="() => LoadPage(pageNum)">@i</button>
+                                </li>
+                            }
+                            
+                            <li class="page-item @(currentPage >= pagedResult.TotalPages ? "disabled" : "")">
+                                <button class="page-link" @onclick="() => LoadPage(currentPage + 1)">Suivant</button>
+                            </li>
+                        </ul>
+                    </nav>
+                    
+                    <div class="text-center text-muted">
+                        Affichage de @((currentPage - 1) * pageSize + 1) à @Math.Min(currentPage * pageSize, pagedResult.TotalItems)
+                        sur @pagedResult.TotalCount conducteurs
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="text-center p-5">
+                    <i class="fas fa-users fa-4x text-muted mb-3"></i>
+                    <h4 class="text-muted">Aucun conducteur trouvé</h4>
+                    <p class="text-muted">Commencez par ajouter votre premier conducteur.</p>
+                    <button class="btn btn-success" @onclick="OpenCreateModal">
+                        <i class="fas fa-plus"></i> Ajouter un conducteur
+                    </button>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Modal de création/modification -->
+@if (showModal)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas @(editingDriver == null ? "fa-plus" : "fa-edit")"></i>
+                        @(editingDriver == null ? "Ajouter un conducteur" : "Modifier le conducteur")
+                    </h5>
+                    <button type="button" class="btn-close" @onclick="CloseModal"></button>
+                </div>
+                <div class="modal-body">
+                    <EditForm Model="driverForm" OnValidSubmit="SaveDriver">
+                        <DataAnnotationsValidator />
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Prénom <span class="text-danger">*</span></label>
+                                <InputText class="form-control" @bind-Value="driverForm.FirstName" />
+                                <ValidationMessage For="() => driverForm.FirstName" />
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Nom <span class="text-danger">*</span></label>
+                                <InputText class="form-control" @bind-Value="driverForm.LastName" />
+                                <ValidationMessage For="() => driverForm.LastName" />
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Email <span class="text-danger">*</span></label>
+                                <InputText class="form-control" @bind-Value="driverForm.Email" />
+                                <ValidationMessage For="() => driverForm.Email" />
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Téléphone</label>
+                                <InputText class="form-control" @bind-Value="driverForm.PhoneNumber" />
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Numéro de permis <span class="text-danger">*</span></label>
+                                <InputText class="form-control" @bind-Value="driverForm.LicenseNumber" />
+                                <ValidationMessage For="() => driverForm.LicenseNumber" />
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Type de permis <span class="text-danger">*</span></label>
+                                <InputSelect class="form-select" @bind-Value="driverForm.LicenseType">
+                                    <option value="">Sélectionner</option>
+                                    <option value="AM">AM (Cyclomoteur)</option>
+                                    <option value="A1">A1 (Moto légère)</option>
+                                    <option value="A2">A2 (Moto intermédiaire)</option>
+                                    <option value="A">A (Moto)</option>
+                                    <option value="B">B (Voiture)</option>
+                                    <option value="BE">BE (Voiture + remorque)</option>
+                                    <option value="C">C (Camion)</option>
+                                    <option value="CE">CE (Camion + remorque)</option>
+                                    <option value="D">D (Bus)</option>
+                                    <option value="DE">DE (Bus + remorque)</option>
+                                </InputSelect>
+                                <ValidationMessage For="() => driverForm.LicenseType" />
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Date d'expiration du permis <span class="text-danger">*</span></label>
+                                <InputDate class="form-control" @bind-Value="driverForm.LicenseExpiryDate" />
+                                <ValidationMessage For="() => driverForm.LicenseExpiryDate" />
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Date de naissance <span class="text-danger">*</span></label>
+                                <InputDate class="form-control" @bind-Value="driverForm.DateOfBirth" />
+                                <ValidationMessage For="() => driverForm.DateOfBirth" />
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Date d'embauche <span class="text-danger">*</span></label>
+                                <InputDate class="form-control" @bind-Value="driverForm.HireDate" />
+                                <ValidationMessage For="() => driverForm.HireDate" />
+                            </div>
+                            @if (editingDriver != null)
+                            {
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Statut</label>
+                                    <InputSelect class="form-select" @bind-Value="driverForm.Status">
+                                        <option value="Active">Actif</option>
+                                        <option value="Inactive">Inactif</option>
+                                    </InputSelect>
+                                </div>
+                            }
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Adresse</label>
+                            <InputTextArea class="form-control" rows="2" @bind-Value="driverForm.Address" />
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Contact d'urgence (nom)</label>
+                                <InputText class="form-control" @bind-Value="driverForm.EmergencyContactName" />
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Contact d'urgence (téléphone)</label>
+                                <InputText class="form-control" @bind-Value="driverForm.EmergencyContactPhone" />
+                            </div>
+                        </div>
+                        
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" @onclick="CloseModal">Annuler</button>
+                            <button type="submit" class="btn btn-success" disabled="@isSaving">
+                                @if (isSaving)
+                                {
+                                    <span class="spinner-border spinner-border-sm me-2"></span>
+                                }
+                                <i class="fas fa-save"></i>
+                                @(editingDriver == null ? "Ajouter" : "Modifier")
+                            </button>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private PagedResult<DriverDto>? pagedResult;
+    private List<DriverDto> drivers = new();
+    private bool isLoading = true;
+    private bool isSaving = false;
+    private bool showModal = false;
+    
+    private int currentPage = 1;
+    private int pageSize = 25;
+    private string searchTerm = "";
+    private string statusFilter = "";
+    
+    private string alertMessage = "";
+    private string alertType = "";
+    
+    private DriverDto? editingDriver;
+    private DriverForm driverForm = new();
+    
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDrivers();
+    }
+    
+    private async Task LoadDrivers()
+    {
+        isLoading = true;
+        StateHasChanged();
+        
+        try
+        {
+            var query = new GetAllDriversQuery
+            {
+                Page = currentPage,
+                PageSize = pageSize,
+                SearchTerm = string.IsNullOrWhiteSpace(searchTerm) ? null : searchTerm,
+                Status = string.IsNullOrWhiteSpace(statusFilter) ? null : statusFilter
+            };
+            
+            var result = await Mediator.Send(query);
+            
+            if (result.IsSuccess)
+            {
+                pagedResult = result.Value;
+                drivers = pagedResult?.Items?.ToList() ?? new List<DriverDto>();
+            }
+            else
+            {
+                ShowAlert("Erreur lors du chargement des conducteurs: " + result.Error, "danger");
+                drivers = new List<DriverDto>();
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowAlert("Erreur lors du chargement des conducteurs: " + ex.Message, "danger");
+            drivers = new List<DriverDto>();
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+    
+    private async Task LoadPage(int page)
+    {
+        currentPage = page;
+        await LoadDrivers();
+    }
+    
+    private async Task OnSearchKeyPress(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            currentPage = 1;
+            await LoadDrivers();
+        }
+    }
+    
+    private void OpenCreateModal()
+    {
+        editingDriver = null;
+        driverForm = new DriverForm();
+        showModal = true;
+    }
+    
+    private void EditDriver(DriverDto driver)
+    {
+        editingDriver = driver;
+        driverForm = new DriverForm
+        {
+            FirstName = driver.FirstName,
+            LastName = driver.LastName,
+            Email = driver.Email,
+            PhoneNumber = driver.PhoneNumber,
+            LicenseNumber = driver.LicenseNumber,
+            LicenseType = driver.LicenseType.ToString(),
+            LicenseExpiryDate = driver.LicenseExpiryDate,
+            DateOfBirth = driver.DateOfBirth,
+            HireDate = driver.HireDate,
+            Status = driver.IsActive ? "Active" : "Inactive"
+        };
+        showModal = true;
+    }
+    
+    private void ViewDriver(DriverDto driver)
+    {
+        // Naviguer vers la page de détails du conducteur
+        // Navigation.NavigateTo($"/drivers/{driver.Id}");
+    }
+    
+    private async Task ConfirmDelete(DriverDto driver)
+    {
+        bool confirmed = await JS.InvokeAsync<bool>("confirm", 
+            $"Êtes-vous sûr de vouloir supprimer le conducteur {driver.FullName} ?");
+        
+        if (confirmed)
+        {
+            await DeleteDriver(driver.Id);
+        }
+    }
+    
+    private async Task DeleteDriver(int id)
+    {
+        try
+        {
+            var command = new DeleteDriverCommand(id);
+            var result = await Mediator.Send(command);
+            
+            if (result.IsSuccess)
+            {
+                ShowAlert("Conducteur supprimé avec succès", "success");
+                await LoadDrivers();
+            }
+            else
+            {
+                ShowAlert("Erreur lors de la suppression: " + result.Error, "danger");
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowAlert("Erreur lors de la suppression: " + ex.Message, "danger");
+        }
+    }
+    
+    private async Task SaveDriver()
+    {
+        isSaving = true;
+        StateHasChanged();
+        
+        try
+        {
+            if (editingDriver == null)
+            {
+                var createCommand = new CreateDriverCommand
+                {
+                    FirstName = driverForm.FirstName,
+                    LastName = driverForm.LastName,
+                    Email = driverForm.Email,
+                    PhoneNumber = driverForm.PhoneNumber,
+                    LicenseNumber = driverForm.LicenseNumber,
+                    LicenseType = driverForm.LicenseType,
+                    LicenseExpiryDate = driverForm.LicenseExpiryDate,
+                    DateOfBirth = driverForm.DateOfBirth,
+                    HireDate = driverForm.HireDate,
+                    Address = driverForm.Address,
+                    EmergencyContactName = driverForm.EmergencyContactName,
+                    EmergencyContactPhone = driverForm.EmergencyContactPhone
+                };
+                
+                var result = await Mediator.Send(createCommand);
+                
+                if (result.IsSuccess)
+                {
+                    ShowAlert("Conducteur ajouté avec succès", "success");
+                    CloseModal();
+                    await LoadDrivers();
+                }
+                else
+                {
+                    ShowAlert("Erreur lors de l'ajout: " + result.Error, "danger");
+                }
+            }
+            else
+            {
+                var updateCommand = new UpdateDriverCommand
+                {
+                    Id = editingDriver.Id,
+                    FirstName = driverForm.FirstName,
+                    LastName = driverForm.LastName,
+                    Email = driverForm.Email,
+                    PhoneNumber = driverForm.PhoneNumber,
+                    LicenseNumber = driverForm.LicenseNumber,
+                    LicenseType = driverForm.LicenseType,
+                    LicenseExpiryDate = driverForm.LicenseExpiryDate,
+                    Address = driverForm.Address,
+                    EmergencyContactName = driverForm.EmergencyContactName,
+                    EmergencyContactPhone = driverForm.EmergencyContactPhone,
+                    Status = driverForm.Status
+                };
+                
+                var result = await Mediator.Send(updateCommand);
+                
+                if (result.IsSuccess)
+                {
+                    ShowAlert("Conducteur modifié avec succès", "success");
+                    CloseModal();
+                    await LoadDrivers();
+                }
+                else
+                {
+                    ShowAlert("Erreur lors de la modification: " + result.Error, "danger");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowAlert("Erreur lors de l'enregistrement: " + ex.Message, "danger");
+        }
+        finally
+        {
+            isSaving = false;
+            StateHasChanged();
+        }
+    }
+    
+    private void CloseModal()
+    {
+        showModal = false;
+        editingDriver = null;
+        driverForm = new DriverForm();
+    }
+    
+    private void ShowAlert(string message, string type)
+    {
+        alertMessage = message;
+        alertType = type;
+        StateHasChanged();
+    }
+    
+    private void ClearAlert()
+    {
+        alertMessage = "";
+        alertType = "";
+    }
+    
+    public class DriverForm
+    {
+        [Required(ErrorMessage = "Le prénom est obligatoire")]
+        public string FirstName { get; set; } = "";
+        
+        [Required(ErrorMessage = "Le nom est obligatoire")]
+        public string LastName { get; set; } = "";
+        
+        [Required(ErrorMessage = "L'email est obligatoire")]
+        [EmailAddress(ErrorMessage = "Format d'email invalide")]
+        public string Email { get; set; } = "";
+        
+        public string? PhoneNumber { get; set; }
+        
+        [Required(ErrorMessage = "Le numéro de permis est obligatoire")]
+        public string LicenseNumber { get; set; } = "";
+        
+        [Required(ErrorMessage = "Le type de permis est obligatoire")]
+        public string LicenseType { get; set; } = "";
+        
+        [Required(ErrorMessage = "La date d'expiration du permis est obligatoire")]
+        public DateTime LicenseExpiryDate { get; set; } = DateTime.Today.AddYears(10);
+        
+        [Required(ErrorMessage = "La date de naissance est obligatoire")]
+        public DateTime DateOfBirth { get; set; } = DateTime.Today.AddYears(-25);
+        
+        [Required(ErrorMessage = "La date d'embauche est obligatoire")]
+        public DateTime HireDate { get; set; } = DateTime.Today;
+        
+        public string? Address { get; set; }
+        public string? EmergencyContactName { get; set; }
+        public string? EmergencyContactPhone { get; set; }
+        public string Status { get; set; } = "Active";
+    }
+}

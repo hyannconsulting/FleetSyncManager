@@ -17,9 +17,19 @@ public class Result<T>
     public T? Data { get; private init; }
     
     /// <summary>
+    /// Response data (alias for compatibility)
+    /// </summary>
+    public T? Value => Data;
+    
+    /// <summary>
     /// Error message if operation failed
     /// </summary>
     public string? ErrorMessage { get; private init; }
+    
+    /// <summary>
+    /// Error message (alias for compatibility)
+    /// </summary>
+    public string? Error => ErrorMessage;
     
     /// <summary>
     /// List of validation errors
@@ -129,6 +139,11 @@ public class PagedResult<T>
     /// Total number of items across all pages
     /// </summary>
     public int TotalCount { get; set; }
+    
+    /// <summary>
+    /// Total number of items (alias for compatibility)
+    /// </summary>
+    public int Count => TotalCount;
     
     /// <summary>
     /// Current page number (1-based)

@@ -305,3 +305,191 @@ public class IncidentDto
     /// </summary>
     public DateTime? ResolutionDate { get; set; }
 }
+
+/// <summary>
+/// Maintenance DTO (compatible with commands)
+/// </summary>
+public class MaintenanceDto
+{
+    /// <summary>
+    /// Maintenance ID
+    /// </summary>
+    public int Id { get; set; }
+    
+    /// <summary>
+    /// Vehicle ID
+    /// </summary>
+    public int VehicleId { get; set; }
+    
+    /// <summary>
+    /// Vehicle license plate
+    /// </summary>
+    public string VehicleLicensePlate { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// Maintenance type
+    /// </summary>
+    public string MaintenanceType { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// Description
+    /// </summary>
+    public string Description { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// Scheduled date
+    /// </summary>
+    public DateTime ScheduledDate { get; set; }
+    
+    /// <summary>
+    /// Completed date
+    /// </summary>
+    public DateTime? CompletedDate { get; set; }
+    
+    /// <summary>
+    /// Estimated cost
+    /// </summary>
+    public decimal? EstimatedCost { get; set; }
+    
+    /// <summary>
+    /// Actual cost
+    /// </summary>
+    public decimal? ActualCost { get; set; }
+    
+    /// <summary>
+    /// Service provider
+    /// </summary>
+    public string? ServiceProvider { get; set; }
+    
+    /// <summary>
+    /// Priority level
+    /// </summary>
+    public string Priority { get; set; } = "Medium";
+    
+    /// <summary>
+    /// Status
+    /// </summary>
+    public string Status { get; set; } = "Planned";
+    
+    /// <summary>
+    /// Vehicle mileage at maintenance
+    /// </summary>
+    public int? MileageAtMaintenance { get; set; }
+    
+    /// <summary>
+    /// Whether this is preventive maintenance
+    /// </summary>
+    public bool IsPreventive { get; set; }
+    
+    /// <summary>
+    /// Notes
+    /// </summary>
+    public string? Notes { get; set; }
+    
+    /// <summary>
+    /// Is completed
+    /// </summary>
+    public bool IsCompleted => CompletedDate.HasValue;
+    
+    /// <summary>
+    /// Is overdue
+    /// </summary>
+    public bool IsOverdue => !IsCompleted && ScheduledDate < DateTime.Today;
+}
+
+/// <summary>
+/// Maintenance statistics DTO
+/// </summary>
+public class MaintenanceStatisticsDto
+{
+    /// <summary>
+    /// Total maintenance records
+    /// </summary>
+    public int TotalMaintenances { get; set; }
+    
+    /// <summary>
+    /// Completed maintenances
+    /// </summary>
+    public int CompletedMaintenances { get; set; }
+    
+    /// <summary>
+    /// Pending maintenances
+    /// </summary>
+    public int PendingMaintenances { get; set; }
+    
+    /// <summary>
+    /// Overdue maintenances
+    /// </summary>
+    public int OverdueMaintenances { get; set; }
+    
+    /// <summary>
+    /// Total cost
+    /// </summary>
+    public decimal TotalCost { get; set; }
+    
+    /// <summary>
+    /// Average cost per maintenance
+    /// </summary>
+    public decimal AverageCost { get; set; }
+    
+    /// <summary>
+    /// Most common maintenance type
+    /// </summary>
+    public string? MostCommonType { get; set; }
+    
+    /// <summary>
+    /// Maintenance by type
+    /// </summary>
+    public Dictionary<string, int> MaintenanceByType { get; set; } = new();
+}
+
+/// <summary>
+/// Incident statistics DTO
+/// </summary>
+public class IncidentStatisticsDto
+{
+    /// <summary>
+    /// Total incidents
+    /// </summary>
+    public int TotalIncidents { get; set; }
+    
+    /// <summary>
+    /// Open incidents
+    /// </summary>
+    public int OpenIncidents { get; set; }
+    
+    /// <summary>
+    /// Resolved incidents
+    /// </summary>
+    public int ResolvedIncidents { get; set; }
+    
+    /// <summary>
+    /// Total estimated cost
+    /// </summary>
+    public decimal TotalEstimatedCost { get; set; }
+    
+    /// <summary>
+    /// Total actual cost
+    /// </summary>
+    public decimal TotalActualCost { get; set; }
+    
+    /// <summary>
+    /// Average resolution time in days
+    /// </summary>
+    public double AverageResolutionDays { get; set; }
+    
+    /// <summary>
+    /// Most common incident type
+    /// </summary>
+    public string? MostCommonType { get; set; }
+    
+    /// <summary>
+    /// Incidents by severity
+    /// </summary>
+    public Dictionary<string, int> IncidentsBySeverity { get; set; } = new();
+    
+    /// <summary>
+    /// Incidents by type
+    /// </summary>
+    public Dictionary<string, int> IncidentsByType { get; set; } = new();
+}

@@ -1,0 +1,212 @@
+@page "/"
+@page "/Home"
+@inject IVehicleApiService VehicleService
+@inject IDriverApiService DriverService
+
+<PageTitle>FleetSyncManager - Accueil</PageTitle>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="display-4 text-primary mb-4">
+                <i class="fas fa-truck"></i> FleetSyncManager
+            </h1>
+            <p class="lead">Bienvenue dans votre système de gestion de flotte automobile</p>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-3 col-md-6">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-car fa-3x text-primary"></i>
+                    </div>
+                    <h5 class="card-title">Véhicules</h5>
+                    <p class="card-text text-muted">Gérez votre flotte de véhicules</p>
+                    @if (vehicleCount.HasValue)
+                    {
+                        <p class="text-primary fw-bold">@vehicleCount véhicule(s)</p>
+                    }
+                    else if (isLoadingVehicles)
+                    {
+                        <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                    }
+                    <a href="/vehicles" class="btn btn-outline-primary">Voir les véhicules</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-users fa-3x text-success"></i>
+                    </div>
+                    <h5 class="card-title">Conducteurs</h5>
+                    <p class="card-text text-muted">Gérez les conducteurs</p>
+                    @if (driverCount.HasValue)
+                    {
+                        <p class="text-success fw-bold">@driverCount conducteur(s)</p>
+                    }
+                    else if (isLoadingDrivers)
+                    {
+                        <div class="spinner-border spinner-border-sm text-success" role="status"></div>
+                    }
+                    <a href="/drivers" class="btn btn-outline-success">Voir les conducteurs</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-wrench fa-3x text-warning"></i>
+                    </div>
+                    <h5 class="card-title">Maintenance</h5>
+                    <p class="card-text text-muted">Planifiez les maintenances</p>
+                    <a href="/maintenances" class="btn btn-outline-warning">Voir les maintenances</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-exclamation-triangle fa-3x text-danger"></i>
+                    </div>
+                    <h5 class="card-title">Incidents</h5>
+                    <p class="card-text text-muted">Gérez les incidents</p>
+                    <a href="/incidents" class="btn btn-outline-danger">Voir les incidents</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>Attention :</strong> @errorMessage
+                    <button type="button" class="btn btn-sm btn-outline-primary ms-2" @onclick="LoadData">
+                        <i class="fas fa-sync-alt"></i> Réessayer
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="card border-0 bg-light">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-info-circle text-info"></i> État du système
+                    </h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>API Status :</strong> 
+                                @if (apiConnected.HasValue)
+                                {
+                                    if (apiConnected.Value)
+                                    {
+                                        <span class="badge bg-success">Connecté</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-danger">Déconnecté</span>
+                                    }
+                                }
+                                else
+                                {
+                                    <span class="badge bg-warning">Test en cours...</span>
+                                }
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Version :</strong> 1.0.0</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private int? vehicleCount;
+    private int? driverCount;
+    private bool? apiConnected;
+    private string errorMessage = "";
+    private bool isLoadingVehicles = true;
+    private bool isLoadingDrivers = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        errorMessage = "";
+        isLoadingVehicles = true;
+        isLoadingDrivers = true;
+        apiConnected = null;
+        
+        StateHasChanged();
+
+        try
+        {
+            // Test de connectivité API en chargeant les données
+            var vehiclesTask = LoadVehicleCount();
+            var driversTask = LoadDriverCount();
+
+            await Task.WhenAll(vehiclesTask, driversTask);
+            
+            apiConnected = true;
+        }
+        catch (Exception ex)
+        {
+            apiConnected = false;
+            errorMessage = "Impossible de se connecter à l'API. Vérifiez que l'API FleetSyncManager est en cours d'exécution.";
+        }
+        finally
+        {
+            isLoadingVehicles = false;
+            isLoadingDrivers = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadVehicleCount()
+    {
+        try
+        {
+            var vehicles = await VehicleService.GetAllAsync();
+            vehicleCount = vehicles?.Count() ?? 0;
+        }
+        catch (Exception)
+        {
+            vehicleCount = null;
+            throw;
+        }
+    }
+
+    private async Task LoadDriverCount()
+    {
+        try
+        {
+            var drivers = await DriverService.GetAllAsync();
+            driverCount = drivers?.Count() ?? 0;
+        }
+        catch (Exception)
+        {
+            driverCount = null;
+            throw;
+        }
+    }
+}
