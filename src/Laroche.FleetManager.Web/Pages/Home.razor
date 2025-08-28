@@ -1,5 +1,4 @@
-@page "/"
-@page "/Home"
+@page "/accueil"
 @inject IVehicleApiService VehicleService
 @inject IDriverApiService DriverService
 
@@ -172,7 +171,7 @@
         catch (Exception ex)
         {
             apiConnected = false;
-            errorMessage = "Impossible de se connecter à l'API. Vérifiez que l'API FleetSyncManager est en cours d'exécution.";
+            errorMessage = "Impossible de se connecter à l'API. Vérifiez que l'API FleetSyncManager est en cours d'exécution. : " + ex.Message;
         }
         finally
         {
@@ -187,7 +186,9 @@
         try
         {
             var vehicles = await VehicleService.GetAllAsync();
-            vehicleCount = vehicles?.Count() ?? 0;
+            vehicleCount = vehicles?.TotalCount ?? 0;
+           
+
         }
         catch (Exception)
         {
@@ -201,7 +202,7 @@
         try
         {
             var drivers = await DriverService.GetAllAsync();
-            driverCount = drivers?.Count() ?? 0;
+            driverCount = drivers?.TotalCount ?? 0;
         }
         catch (Exception)
         {

@@ -334,8 +334,8 @@
             Brand = vehicle.Brand,
             Model = vehicle.Model,
             Year = vehicle.Year,
-            Status = vehicle.Status,
-            FuelType = vehicle.FuelType,
+            Status = vehicle.Status.ToString(),
+            FuelType = vehicle.FuelType.ToString(),
             Mileage = vehicle.Mileage,
             PurchaseDate = vehicle.PurchaseDate,
             VIN = vehicle.VIN,
@@ -368,8 +368,8 @@
                     Model = vehicleForm.Model,
                     Year = vehicleForm.Year,
                     Status = vehicleForm.Status,
-                    FuelType = vehicleForm.FuelType,
-                    Mileage = vehicleForm.Mileage,
+                    FuelType = vehicleForm.FuelType ?? string.Empty,
+                    Mileage = vehicleForm.Mileage ?? 0,
                     PurchaseDate = vehicleForm.PurchaseDate,
                     VIN = vehicleForm.VIN,
                     Notes = vehicleForm.Notes
@@ -399,8 +399,8 @@
                     Model = vehicleForm.Model,
                     Year = vehicleForm.Year,
                     Status = vehicleForm.Status,
-                    FuelType = vehicleForm.FuelType,
-                    Mileage = vehicleForm.Mileage,
+                    FuelType = vehicleForm.FuelType ?? "1",
+                    Mileage = vehicleForm.Mileage ?? 0,
                     PurchaseDate = vehicleForm.PurchaseDate,
                     VIN = vehicleForm.VIN,
                     Notes = vehicleForm.Notes
@@ -437,7 +437,7 @@
         {
             try
             {
-                var command = new DeleteVehicleCommand { Id = id };
+                var command = new DeleteVehicleCommand(id);
                 var result = await Mediator.Send(command);
                 
                 if (result.IsSuccess)
@@ -456,13 +456,19 @@
             }
         }
     }
-    
-    private static string GetStatusBadgeClass(string status) => status?.ToLower() switch
+
+    // Méthode utilitaire pour retourner la classe CSS du badge selon le statut du véhicule
+    private string GetStatusBadgeClass(object? status)
     {
-        "active" => "success",
-        "maintenance" => "warning",
-        "outoforder" => "danger",
-        "sold" => "secondary",
-        _ => "secondary"
-    };
+        // On suppose que status est de type string ou VehicleStatusEnums
+        var statusStr = status?.ToString() ?? string.Empty;
+        return statusStr switch
+        {
+            "Active" or "Actif" => "success",
+            "Maintenance" or "En maintenance" => "warning",
+            "OutOfOrder" or "Hors service" => "danger",
+            "Sold" or "Vendu" => "secondary",
+            _ => "light"
+        };
+    }
 }

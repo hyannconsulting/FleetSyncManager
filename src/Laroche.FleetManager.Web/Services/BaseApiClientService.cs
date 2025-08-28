@@ -1,28 +1,12 @@
-using Laroche.FleetManager.Application.DTOs;
 using Laroche.FleetManager.Application.Common;
 using System.Text.Json;
 
 namespace Laroche.FleetManager.Web.Services;
 
 /// <summary>
-/// Interface pour les services API client
-/// </summary>
-public interface IApiClientService<TDto, TCreateCommand, TUpdateCommand>
-    where TDto : class
-    where TCreateCommand : class
-    where TUpdateCommand : class
-{
-    Task<PagedResult<TDto>?> GetAllAsync(int page = 1, int pageSize = 10, string? searchTerm = null);
-    Task<TDto?> GetByIdAsync(int id);
-    Task<TDto?> CreateAsync(TCreateCommand command);
-    Task<TDto?> UpdateAsync(int id, TUpdateCommand command);
-    Task<bool> DeleteAsync(int id);
-}
-
-/// <summary>
 /// Service de base pour les clients API
 /// </summary>
-public abstract class BaseApiClientService<TDto, TCreateCommand, TUpdateCommand> 
+public abstract class BaseApiClientService<TDto, TCreateCommand, TUpdateCommand>
     : IApiClientService<TDto, TCreateCommand, TUpdateCommand>
     where TDto : class
     where TCreateCommand : class
@@ -34,7 +18,7 @@ public abstract class BaseApiClientService<TDto, TCreateCommand, TUpdateCommand>
     protected abstract string ApiEndpoint { get; }
 
     protected BaseApiClientService(
-        HttpClient httpClient, 
+        HttpClient httpClient,
         ILogger<BaseApiClientService<TDto, TCreateCommand, TUpdateCommand>> logger)
     {
         _httpClient = httpClient;
@@ -50,8 +34,8 @@ public abstract class BaseApiClientService<TDto, TCreateCommand, TUpdateCommand>
     /// Récupère tous les éléments avec pagination
     /// </summary>
     public virtual async Task<PagedResult<TDto>?> GetAllAsync(
-        int page = 1, 
-        int pageSize = 10, 
+        int page = 1,
+        int pageSize = 10,
         string? searchTerm = null)
     {
         try

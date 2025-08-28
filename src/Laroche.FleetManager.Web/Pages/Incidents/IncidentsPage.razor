@@ -56,7 +56,7 @@
                                             <td>@incident.DriverName</td>
                                             <td>@incident.IncidentType</td>
                                             <td>
-                                                <span class="badge bg-@(GetSeverityBadgeClass(incident.Severity))">
+                                                <span class="badge bg-@(GetSeverityBadgeClass(incident.Severity.ToString()))">
                                                     @incident.Severity
                                                 </span>
                                             </td>
@@ -370,7 +370,7 @@
             DriverId = incident.DriverId,
             IncidentDate = incident.IncidentDate,
             IncidentType = incident.IncidentType,
-            Severity = incident.Severity,
+            Severity = incident.Severity.ToString(),
             Status = incident.Status,
             Location = incident.Location,
             Description = incident.Description,
@@ -479,7 +479,7 @@
         {
             try
             {
-                var command = new ResolveIncidentCommand { Id = id };
+                var command = new ResolveIncidentCommand(id);
                 var result = await Mediator.Send(command);
                 
                 if (result.IsSuccess)
@@ -505,7 +505,7 @@
         {
             try
             {
-                var command = new DeleteIncidentCommand { Id = id };
+                var command = new DeleteIncidentCommand(id);
                 var result = await Mediator.Send(command);
                 
                 if (result.IsSuccess)

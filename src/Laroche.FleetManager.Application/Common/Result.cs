@@ -87,6 +87,11 @@ public class Result
     public string? ErrorMessage { get; private init; }
     
     /// <summary>
+    /// Error message (alias for compatibility)
+    /// </summary>
+    public string? Error => ErrorMessage;
+    
+    /// <summary>
     /// List of validation errors
     /// </summary>
     public IList<string> ValidationErrors { get; private init; } = [];
@@ -144,6 +149,11 @@ public class PagedResult<T>
     /// Total number of items (alias for compatibility)
     /// </summary>
     public int Count => TotalCount;
+    
+    /// <summary>
+    /// Total number of items (another alias for compatibility)
+    /// </summary>
+    public int TotalItems => TotalCount;
     
     /// <summary>
     /// Current page number (1-based)

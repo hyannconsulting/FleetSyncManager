@@ -88,6 +88,35 @@ public class CreateIncidentCommand : IRequest<Result<IncidentDto>>
     /// Additional notes
     /// </summary>
     public string? Notes { get; set; }
+
+    /// <summary>
+    /// Incident status
+    /// </summary>
+    public string Status { get; set; } = "Open";
+
+    /// <summary>
+    /// Alias for EstimatedDamageCost (for compatibility)
+    /// </summary>
+    public decimal? EstimatedCost
+    {
+        get => EstimatedDamageCost;
+        set => EstimatedDamageCost = value;
+    }
+
+    /// <summary>
+    /// Date when incident was resolved
+    /// </summary>
+    public DateTime? ResolvedDate { get; set; }
+
+    /// <summary>
+    /// Person who investigated the incident
+    /// </summary>
+    public string? InvestigatedBy { get; set; }
+
+    /// <summary>
+    /// Investigation notes
+    /// </summary>
+    public string? InvestigationNotes { get; set; }
 }
 
 /// <summary>
@@ -184,6 +213,35 @@ public class UpdateIncidentCommand : IRequest<Result<IncidentDto>>
     /// Additional notes
     /// </summary>
     public string? Notes { get; set; }
+
+    /// <summary>
+    /// Vehicle ID involved in the incident
+    /// </summary>
+    public int VehicleId { get; set; }
+
+    /// <summary>
+    /// Driver ID involved in the incident
+    /// </summary>
+    public int? DriverId { get; set; }
+
+    /// <summary>
+    /// Alias for EstimatedDamageCost (for compatibility)
+    /// </summary>
+    public decimal? EstimatedCost
+    {
+        get => EstimatedDamageCost;
+        set => EstimatedDamageCost = value;
+    }
+
+    /// <summary>
+    /// Person who investigated the incident
+    /// </summary>
+    public string? InvestigatedBy { get; set; }
+
+    /// <summary>
+    /// Investigation notes
+    /// </summary>
+    public string? InvestigationNotes { get; set; }
 }
 
 /// <summary>

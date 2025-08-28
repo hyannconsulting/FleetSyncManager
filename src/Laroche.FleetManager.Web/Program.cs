@@ -1,5 +1,3 @@
-using Laroche.FleetManager.Application;
-
 var builder = WebApplication.CreateBuilder(args);
 
 // Ajout des services
@@ -8,11 +6,8 @@ builder.Services.AddServerSideBlazor();
 
 // Configuration MediatR
 builder.Services.AddMediatR(cfg => {
-    cfg.RegisterServicesFromAssembly(typeof(ApplicationServiceRegistration).Assembly);
+    cfg.RegisterServicesFromAssemblyContaining<Program>();
 });
-
-// Configuration des services d'application
-builder.Services.AddApplicationServices();
 
 var app = builder.Build();
 

@@ -1,100 +1,109 @@
-using Laroche.FleetManager.Domain.Common;
 using Laroche.FleetManager.Domain.Enums;
 
-namespace Laroche.FleetManager.Domain.Entities;
+namespace Laroche.FleetManager.Application.DTOs;
 
 /// <summary>
-/// Vehicle domain entity
+/// Vehicle Data Transfer Object
 /// </summary>
-public class Vehicle : BaseEntity
+public class VehicleDto
 {
     /// <summary>
-    /// Vehicle license plate number
+    /// Vehicle ID
+    /// </summary>
+    public int Id { get; set; }
+
+    /// <summary>
+    /// Vehicle license plate
     /// </summary>
     public string LicensePlate { get; set; } = string.Empty;
-    
+
     /// <summary>
-    /// Vehicle Identification Number (VIN)
+    /// Vehicle VIN number
     /// </summary>
     public string? Vin { get; set; }
-    
+
     /// <summary>
-    /// Vehicle brand/manufacturer
+    /// Vehicle brand
     /// </summary>
     public string Brand { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// Vehicle model
     /// </summary>
     public string Model { get; set; } = string.Empty;
-    
+
     /// <summary>
-    /// Vehicle manufacturing year
+    /// Vehicle year
     /// </summary>
     public int Year { get; set; }
-    
+
     /// <summary>
     /// Vehicle fuel type
     /// </summary>
     public FuelType FuelType { get; set; }
-    
+
     /// <summary>
-    /// Current mileage/kilometers
+    /// Current mileage
     /// </summary>
     public int CurrentMileage { get; set; }
-    
+
     /// <summary>
-    /// Vehicle current status
+    /// Vehicle status
     /// </summary>
-    public VehicleStatusEnums Status { get; set; } = VehicleStatusEnums.Active;
-    
+    public VehicleStatusEnums Status { get; set; }
+
     /// <summary>
-    /// Vehicle purchase date
+    /// Purchase date
     /// </summary>
     public DateTime? PurchaseDate { get; set; }
-    
+
     /// <summary>
-    /// Vehicle purchase price
+    /// Purchase price
     /// </summary>
     public decimal? PurchasePrice { get; set; }
-    
+
     /// <summary>
     /// Insurance policy number
     /// </summary>
     public string? InsurancePolicyNumber { get; set; }
-    
+
     /// <summary>
     /// Insurance expiry date
     /// </summary>
     public DateTime? InsuranceExpiryDate { get; set; }
-    
+
     /// <summary>
     /// Next maintenance due date
     /// </summary>
     public DateTime? NextMaintenanceDue { get; set; }
-    
+
     /// <summary>
     /// Next maintenance due mileage
     /// </summary>
     public int? NextMaintenanceMileage { get; set; }
-    
+
     /// <summary>
-    /// Vehicle assignments to drivers
+    /// Currently assigned driver
     /// </summary>
-    public virtual ICollection<VehicleAssignment> VehicleAssignments { get; set; } = [];
-    
+    public string? AssignedDriverName { get; set; }
+
     /// <summary>
-    /// Vehicle maintenance records
+    /// Vehicle notes
     /// </summary>
-    public virtual ICollection<MaintenanceRecord> MaintenanceRecords { get; set; } = [];
-    
+    public string? Notes { get; set; }
+
     /// <summary>
-    /// Vehicle incidents
+    /// Vehicle full name (Brand Model Year)
     /// </summary>
-    public virtual ICollection<Incident> Incidents { get; set; } = [];
-    
+    public string FullName => $"{Brand} {Model} ({Year})";
+
     /// <summary>
-    /// Vehicle GPS tracking records
+    /// Alias for CurrentMileage (for compatibility)
     /// </summary>
-    public virtual ICollection<GpsTrackingRecord> GpsTrackingRecords { get; set; } = [];
+    public int Mileage => CurrentMileage;
+
+    /// <summary>
+    /// Alias for Vin (for compatibility)
+    /// </summary>
+    public string? VIN => Vin;
 }

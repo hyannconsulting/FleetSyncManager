@@ -160,7 +160,7 @@
                                     <br><small class="text-muted">@incident.IncidentType</small>
                                 </div>
                                 <div class="text-end">
-                                    <span class="badge bg-@(GetSeverityBadgeClass(incident.Severity))">
+                                    <span class="badge bg-@(GetSeverityBadgeClass(incident.Severity.ToString()))">
                                         @incident.Severity
                                     </span>
                                     <br><small>@incident.IncidentDate.ToString("dd/MM/yyyy")</small>

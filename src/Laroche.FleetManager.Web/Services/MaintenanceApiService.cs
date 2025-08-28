@@ -1,16 +1,7 @@
-using Laroche.FleetManager.Application.DTOs;
 using Laroche.FleetManager.Application.Commands.Maintenances;
+using Laroche.FleetManager.Application.DTOs;
 
 namespace Laroche.FleetManager.Web.Services;
-
-/// <summary>
-/// Interface pour le service client API de maintenance
-/// </summary>
-public interface IMaintenanceApiService : IApiClientService<MaintenanceDto, CreateMaintenanceCommand, UpdateMaintenanceCommand>
-{
-    Task<IEnumerable<MaintenanceDto>?> GetMaintenancesByVehicleAsync(int vehicleId);
-    Task<IEnumerable<MaintenanceDto>?> GetUpcomingMaintenancesAsync(int daysAhead = 30);
-}
 
 /// <summary>
 /// Service client API pour la maintenance
@@ -19,7 +10,7 @@ public class MaintenanceApiService : BaseApiClientService<MaintenanceDto, Create
 {
     protected override string ApiEndpoint => "/api/v1/maintenances";
 
-    public MaintenanceApiService(HttpClient httpClient, ILogger<MaintenanceApiService> logger) 
+    public MaintenanceApiService(HttpClient httpClient, ILogger<MaintenanceApiService> logger)
         : base(httpClient, logger)
     {
     }

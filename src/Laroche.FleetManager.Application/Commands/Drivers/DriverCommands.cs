@@ -1,6 +1,6 @@
-using MediatR;
 using Laroche.FleetManager.Application.Common;
 using Laroche.FleetManager.Application.DTOs;
+using MediatR;
 
 namespace Laroche.FleetManager.Application.Commands.Drivers;
 
@@ -13,61 +13,66 @@ public class CreateDriverCommand : IRequest<Result<DriverDto>>
     /// Driver's first name
     /// </summary>
     public string FirstName { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// Driver's last name
     /// </summary>
     public string LastName { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// Driver's email address
     /// </summary>
     public string Email { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// Driver's phone number
     /// </summary>
     public string? PhoneNumber { get; set; }
-    
+
     /// <summary>
     /// Driver's license number
     /// </summary>
     public string LicenseNumber { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// License type (A, B, C, D, etc.)
     /// </summary>
     public string LicenseType { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// License expiration date
     /// </summary>
     public DateTime LicenseExpiryDate { get; set; }
-    
+
     /// <summary>
     /// Driver's date of birth
     /// </summary>
     public DateTime DateOfBirth { get; set; }
-    
+
     /// <summary>
     /// Hire date
     /// </summary>
-    public DateTime HireDate { get; set; }
-    
+    public DateTime? HireDate { get; set; }
+
     /// <summary>
     /// Driver's address
     /// </summary>
     public string? Address { get; set; }
-    
+
     /// <summary>
     /// Emergency contact name
     /// </summary>
     public string? EmergencyContactName { get; set; }
-    
+
     /// <summary>
     /// Emergency contact phone
     /// </summary>
     public string? EmergencyContactPhone { get; set; }
+
+    /// <summary>
+    /// Gets or sets the notes or additional information associated with the object.
+    /// </summary>
+    public string? Notes { get; set; }
 }
 
 /// <summary>
@@ -79,57 +84,57 @@ public class UpdateDriverCommand : IRequest<Result<DriverDto>>
     /// Driver ID
     /// </summary>
     public int Id { get; set; }
-    
+
     /// <summary>
     /// Driver's first name
     /// </summary>
     public string FirstName { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// Driver's last name
     /// </summary>
     public string LastName { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// Driver's email address
     /// </summary>
     public string Email { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// Driver's phone number
     /// </summary>
     public string? PhoneNumber { get; set; }
-    
+
     /// <summary>
     /// Driver's license number
     /// </summary>
     public string LicenseNumber { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// License type (A, B, C, D, etc.)
     /// </summary>
     public string LicenseType { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// License expiration date
     /// </summary>
     public DateTime LicenseExpiryDate { get; set; }
-    
+
     /// <summary>
     /// Driver's address
     /// </summary>
     public string? Address { get; set; }
-    
+
     /// <summary>
     /// Emergency contact name
     /// </summary>
     public string? EmergencyContactName { get; set; }
-    
+
     /// <summary>
     /// Emergency contact phone
     /// </summary>
     public string? EmergencyContactPhone { get; set; }
-    
+
     /// <summary>
     /// Driver status
     /// </summary>
@@ -145,7 +150,7 @@ public class DeleteDriverCommand : IRequest<Result>
     /// Driver ID to delete
     /// </summary>
     public int Id { get; set; }
-    
+
     public DeleteDriverCommand(int id)
     {
         Id = id;

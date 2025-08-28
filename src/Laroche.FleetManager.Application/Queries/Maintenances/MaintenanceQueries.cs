@@ -111,6 +111,11 @@ public class GetUpcomingMaintenancesQuery : IRequest<Result<IReadOnlyList<Mainte
     /// Filter by maintenance type
     /// </summary>
     public string? MaintenanceType { get; set; }
+    
+    /// <summary>
+    /// Maximum number of records to return
+    /// </summary>
+    public int MaxRecords { get; set; } = 50;
 }
 
 /// <summary>

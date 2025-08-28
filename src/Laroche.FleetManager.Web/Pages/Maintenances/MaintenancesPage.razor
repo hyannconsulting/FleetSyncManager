@@ -405,10 +405,10 @@
                     Priority = maintenanceForm.Priority,
                     Status = maintenanceForm.Status,
                     EstimatedCost = maintenanceForm.EstimatedCost,
-                    StartDate = maintenanceForm.StartDate,
+                    StartDate = maintenanceForm.StartDate ?? DateTime.UtcNow,
                     EndDate = maintenanceForm.EndDate,
                     Vendor = maintenanceForm.Vendor,
-                    Description = maintenanceForm.Description,
+                    Description = maintenanceForm.Description ?? string.Empty,
                     Notes = maintenanceForm.Notes
                 };
                 
@@ -437,10 +437,10 @@
                     Priority = maintenanceForm.Priority,
                     Status = maintenanceForm.Status,
                     EstimatedCost = maintenanceForm.EstimatedCost,
-                    StartDate = maintenanceForm.StartDate,
+                    StartDate = maintenanceForm.StartDate ?? DateTime.UtcNow ,
                     EndDate = maintenanceForm.EndDate,
                     Vendor = maintenanceForm.Vendor,
-                    Description = maintenanceForm.Description,
+                    Description = maintenanceForm.Description ?? string.Empty,
                     Notes = maintenanceForm.Notes
                 };
                 
@@ -475,7 +475,7 @@
         {
             try
             {
-                var command = new CompleteMaintenanceCommand { Id = id };
+                var command = new CompleteMaintenanceCommand(id);
                 var result = await Mediator.Send(command);
                 
                 if (result.IsSuccess)
@@ -501,7 +501,7 @@
         {
             try
             {
-                var command = new DeleteMaintenanceCommand { Id = id };
+                var command = new DeleteMaintenanceCommand(id);
                 var result = await Mediator.Send(command);
                 
                 if (result.IsSuccess)

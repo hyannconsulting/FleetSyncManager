@@ -1,17 +1,7 @@
-using Laroche.FleetManager.Application.DTOs;
 using Laroche.FleetManager.Application.Commands.Incidents;
+using Laroche.FleetManager.Application.DTOs;
 
 namespace Laroche.FleetManager.Web.Services;
-
-/// <summary>
-/// Interface pour le service client API des incidents
-/// </summary>
-public interface IIncidentApiService : IApiClientService<IncidentDto, CreateIncidentCommand, UpdateIncidentCommand>
-{
-    Task<IEnumerable<IncidentDto>?> GetIncidentsByVehicleAsync(int vehicleId);
-    Task<IEnumerable<IncidentDto>?> GetIncidentsByDriverAsync(int driverId);
-    Task<IEnumerable<IncidentDto>?> GetPendingIncidentsAsync();
-}
 
 /// <summary>
 /// Service client API pour les incidents
@@ -20,7 +10,7 @@ public class IncidentApiService : BaseApiClientService<IncidentDto, CreateIncide
 {
     protected override string ApiEndpoint => "/api/v1/incidents";
 
-    public IncidentApiService(HttpClient httpClient, ILogger<IncidentApiService> logger) 
+    public IncidentApiService(HttpClient httpClient, ILogger<IncidentApiService> logger)
         : base(httpClient, logger)
     {
     }
