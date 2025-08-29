@@ -7,9 +7,39 @@
 @using Laroche.FleetManager.Application.DTOs
 @using Laroche.FleetManager.Application.Common
 @inject IMediator Mediator
-@inject IJSRuntime JSRuntime
 
 <PageTitle>Conducteurs</PageTitle>
+
+<!-- Système de notifications -->
+@if (!string.IsNullOrEmpty(notificationMessage))
+{
+    <div class="alert alert-@notificationType alert-dismissible fade show" role="alert">
+        @notificationMessage
+        <button type="button" class="btn-close" @onclick="() => ClearNotification()"></button>
+    </div>
+}
+
+<!-- Modal de confirmation -->
+@if (showConfirmModal)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Confirmation</h5>
+                    <button type="button" class="btn-close" @onclick="() => CancelConfirmation()"></button>
+                </div>
+                <div class="modal-body">
+                    @confirmationMessage
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="() => CancelConfirmation()">Annuler</button>
+                    <button type="button" class="btn btn-danger" @onclick="() => ConfirmAction()">Confirmer</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
 
 <div class="container-fluid">
     <div class="row">
@@ -286,12 +316,22 @@
 }
 
 @code {
+    // Variables d'état de la page
     private PagedResult<DriverDto>? pagedResult;
     private bool isLoading = true;
     private bool isSaving = false;
     private bool showModal = false;
     private int currentPage = 1;
     private int pageSize = 10;
+    
+    // Variables pour le système de notifications
+    private string? notificationMessage;
+    private string notificationType = "info";
+    
+    // Variables pour le système de confirmation
+    private bool showConfirmModal = false;
+    private string? confirmationMessage;
+    private Func<Task>? pendingAction;
     
     private DriverDto? editingDriver;
     private DriverForm driverForm = new();
@@ -329,6 +369,61 @@
         public string? Notes { get; set; }
     }
     
+    // Méthodes de notification
+    private void ShowNotification(string message, string type = "info")
+    {
+        notificationMessage = message;
+        notificationType = type;
+        StateHasChanged();
+        
+        // Auto-effacement après 5 secondes
+        _ = Task.Run(async () =>
+        {
+            await Task.Delay(5000);
+            await InvokeAsync(() =>
+            {
+                ClearNotification();
+                StateHasChanged();
+            });
+        });
+    }
+    
+    private void ClearNotification()
+    {
+        notificationMessage = null;
+        notificationType = "info";
+    }
+    
+    // Méthodes de confirmation
+    private void ShowConfirmation(string message, Func<Task> action)
+    {
+        confirmationMessage = message;
+        pendingAction = action;
+        showConfirmModal = true;
+        StateHasChanged();
+    }
+    
+    private void CancelConfirmation()
+    {
+        showConfirmModal = false;
+        confirmationMessage = null;
+        pendingAction = null;
+        StateHasChanged();
+    }
+    
+    private async Task ConfirmAction()
+    {
+        if (pendingAction != null)
+        {
+            await pendingAction();
+        }
+        
+        showConfirmModal = false;
+        confirmationMessage = null;
+        pendingAction = null;
+        StateHasChanged();
+    }
+    
     protected override async Task OnInitializedAsync()
     {
         await LoadDrivers();
@@ -355,12 +450,12 @@
             }
             else
             {
-                await JSRuntime.InvokeVoidAsync("alert", "Erreur lors du chargement des conducteurs");
+                ShowNotification("Erreur lors du chargement des conducteurs", "danger");
             }
         }
         catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("alert", $"Erreur: {ex.Message}");
+            ShowNotification($"Erreur: {ex.Message}", "danger");
         }
         finally
         {
@@ -438,13 +533,13 @@
                 
                 if (result.IsSuccess)
                 {
-                    await JSRuntime.InvokeVoidAsync("alert", "Conducteur créé avec succès");
+                    ShowNotification("Conducteur créé avec succès", "success");
                     CloseModal();
                     await LoadDrivers(currentPage);
                 }
                 else
                 {
-                    await JSRuntime.InvokeVoidAsync("alert", "Erreur lors de la création du conducteur");
+                    ShowNotification("Erreur lors de la création du conducteur", "danger");
                 }
             }
             else
@@ -473,19 +568,19 @@
                 
                 if (result.IsSuccess)
                 {
-                    await JSRuntime.InvokeVoidAsync("alert", "Conducteur modifié avec succès");
+                    ShowNotification("Conducteur modifié avec succès", "success");
                     CloseModal();
                     await LoadDrivers(currentPage);
                 }
                 else
                 {
-                    await JSRuntime.InvokeVoidAsync("alert", "Erreur lors de la modification du conducteur");
+                    ShowNotification("Erreur lors de la modification du conducteur", "danger");
                 }
             }
         }
         catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("alert", $"Erreur: {ex.Message}");
+            ShowNotification($"Erreur: {ex.Message}", "danger");
         }
         finally
         {
@@ -494,9 +589,9 @@
         }
     }
     
-    private async Task DeleteDriver(int id)
+    private void DeleteDriver(int id)
     {
-        if (await JSRuntime.InvokeAsync<bool>("confirm", "Êtes-vous sûr de vouloir supprimer ce conducteur ?"))
+        ShowConfirmation("Êtes-vous sûr de vouloir supprimer ce conducteur ?", async () =>
         {
             try
             {
@@ -505,19 +600,19 @@
                 
                 if (result.IsSuccess)
                 {
-                    await JSRuntime.InvokeVoidAsync("alert", "Conducteur supprimé avec succès");
+                    ShowNotification("Conducteur supprimé avec succès", "success");
                     await LoadDrivers(currentPage);
                 }
                 else
                 {
-                    await JSRuntime.InvokeVoidAsync("alert", "Erreur lors de la suppression du conducteur");
+                    ShowNotification("Erreur lors de la suppression du conducteur", "danger");
                 }
             }
             catch (Exception ex)
             {
-                await JSRuntime.InvokeVoidAsync("alert", $"Erreur: {ex.Message}");
+                ShowNotification($"Erreur: {ex.Message}", "danger");
             }
-        }
+        });
     }
     
     private static string GetStatusBadgeClass(string status) => status?.ToLower() switch

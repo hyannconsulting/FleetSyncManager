@@ -1,236 +1,369 @@
+@page "/dashboard"
 @page "/"
-@page "/Home"
-@using MediatR
 @using Laroche.FleetManager.Application.Queries.Vehicles
 @using Laroche.FleetManager.Application.Queries.Drivers
 @using Laroche.FleetManager.Application.Queries.Maintenances
 @using Laroche.FleetManager.Application.Queries.Incidents
 @using Laroche.FleetManager.Application.DTOs
+@using MediatR
 @inject IMediator Mediator
 
-<PageTitle>FleetSyncManager - Tableau de bord</PageTitle>
+<PageTitle>Tableau de Bord - FleetSync Manager</PageTitle>
 
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">
-            <h1 class="display-4 text-primary mb-4">
-                <i class="fas fa-truck"></i> FleetSyncManager
+            <h1 class="mb-4">
+                <i class="fas fa-tachometer-alt me-2"></i>
+                Tableau de Bord - FleetSync Manager
             </h1>
-            <p class="lead">Tableau de bord de gestion de flotte automobile</p>
         </div>
     </div>
 
-    <div class="row g-4 mb-4">
-        <div class="col-lg-3 col-md-6">
-            <div class="card h-100 border-0 shadow-sm bg-primary text-white">
-                <div class="card-body text-center">
-                    <div class="mb-3">
-                        <i class="fas fa-car fa-3x"></i>
-                    </div>
-                    <h5 class="card-title">Véhicules</h5>
-                    @if (isLoading)
-                    {
-                        <div class="spinner-border spinner-border-sm" role="status"></div>
-                    }
-                    else
-                    {
-                        <h2 class="fw-bold">@vehicleCount</h2>
-                    }
-                    <a href="/vehicles" class="btn btn-light mt-2">Gérer</a>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-3 col-md-6">
-            <div class="card h-100 border-0 shadow-sm bg-success text-white">
-                <div class="card-body text-center">
-                    <div class="mb-3">
-                        <i class="fas fa-users fa-3x"></i>
-                    </div>
-                    <h5 class="card-title">Conducteurs</h5>
-                    @if (isLoading)
-                    {
-                        <div class="spinner-border spinner-border-sm" role="status"></div>
-                    }
-                    else
-                    {
-                        <h2 class="fw-bold">@driverCount</h2>
-                    }
-                    <a href="/drivers" class="btn btn-light mt-2">Gérer</a>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-3 col-md-6">
-            <div class="card h-100 border-0 shadow-sm bg-warning text-white">
-                <div class="card-body text-center">
-                    <div class="mb-3">
-                        <i class="fas fa-tools fa-3x"></i>
-                    </div>
-                    <h5 class="card-title">Maintenances</h5>
-                    @if (isLoading)
-                    {
-                        <div class="spinner-border spinner-border-sm" role="status"></div>
-                    }
-                    else
-                    {
-                        <h2 class="fw-bold">@maintenanceCount</h2>
-                    }
-                    <a href="/maintenances" class="btn btn-light mt-2">Gérer</a>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-3 col-md-6">
-            <div class="card h-100 border-0 shadow-sm bg-danger text-white">
-                <div class="card-body text-center">
-                    <div class="mb-3">
-                        <i class="fas fa-exclamation-triangle fa-3x"></i>
-                    </div>
-                    <h5 class="card-title">Incidents</h5>
-                    @if (isLoading)
-                    {
-                        <div class="spinner-border spinner-border-sm" role="status"></div>
-                    }
-                    else
-                    {
-                        <h2 class="fw-bold">@incidentCount</h2>
-                    }
-                    <a href="/incidents" class="btn btn-light mt-2">Gérer</a>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="row g-4">
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">
-                        <i class="fas fa-exclamation-triangle text-warning me-2"></i>
-                        Maintenances à venir
+    <!-- Statistiques -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="card bg-primary text-white h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-car me-2"></i>
+                        Véhicules
                     </h5>
+                    <i class="fas fa-car fa-2x"></i>
                 </div>
                 <div class="card-body">
-                    @if (upcomingMaintenances?.Any() == true)
+                    <div class="row align-items-center">
+                        <div class="col">
+                            @if (isLoading)
+                            {
+                                <div class="spinner-border text-light" role="status">
+                                    <span class="visually-hidden">Chargement...</span>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="h2 mb-0">@vehicleCount</div>
+                                <div class="text-white-75">Véhicules actifs</div>
+                            }
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <a class="small text-white stretched-link text-decoration-none" href="/vehicles">
+                        Voir tous les véhicules
+                        <i class="fas fa-angle-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="card bg-success text-white h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-users me-2"></i>
+                        Conducteurs
+                    </h5>
+                    <i class="fas fa-users fa-2x"></i>
+                </div>
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            @if (isLoading)
+                            {
+                                <div class="spinner-border text-light" role="status">
+                                    <span class="visually-hidden">Chargement...</span>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="h2 mb-0">@driverCount</div>
+                                <div class="text-white-75">Conducteurs actifs</div>
+                            }
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <a class="small text-white stretched-link text-decoration-none" href="/drivers">
+                        Voir tous les conducteurs
+                        <i class="fas fa-angle-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="card bg-warning text-white h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-wrench me-2"></i>
+                        Maintenances
+                    </h5>
+                    <i class="fas fa-wrench fa-2x"></i>
+                </div>
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            @if (isLoading)
+                            {
+                                <div class="spinner-border text-light" role="status">
+                                    <span class="visually-hidden">Chargement...</span>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="h2 mb-0">@maintenanceCount</div>
+                                <div class="text-white-75">À prévoir</div>
+                            }
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <a class="small text-white stretched-link text-decoration-none" href="/maintenance">
+                        Voir toutes les maintenances
+                        <i class="fas fa-angle-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="card bg-danger text-white h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Incidents
+                    </h5>
+                    <i class="fas fa-exclamation-triangle fa-2x"></i>
+                </div>
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            @if (isLoading)
+                            {
+                                <div class="spinner-border text-light" role="status">
+                                    <span class="visually-hidden">Chargement...</span>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="h2 mb-0">@incidentCount</div>
+                                <div class="text-white-75">Ouverts</div>
+                            }
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <a class="small text-white stretched-link text-decoration-none" href="/incidents">
+                        Voir tous les incidents
+                        <i class="fas fa-angle-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Maintenances à venir et incidents récents -->
+    <div class="row">
+        <div class="col-xl-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-wrench me-1"></i>
+                    Prochaines Maintenances (@upcomingMaintenances.Count)
+                </div>
+                <div class="card-body">
+                    @if (isLoading)
+                    {
+                        <div class="text-center py-4">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Chargement...</span>
+                            </div>
+                            <p class="mt-2 text-muted">Chargement des maintenances...</p>
+                        </div>
+                    }
+                    else if (upcomingMaintenances.Any())
                     {
                         @foreach (var maintenance in upcomingMaintenances.Take(5))
                         {
-                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                <div>
-                                    <strong>@maintenance.VehicleLicensePlate</strong>
-                                    <br><small class="text-muted">@maintenance.MaintenanceType</small>
+                            <div class="d-flex align-items-center border-bottom py-3">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-wrench text-warning fa-lg"></i>
                                 </div>
-                                <div class="text-end">
-                                    <span class="badge bg-@(GetPriorityBadgeClass(maintenance.Priority))">
-                                        @maintenance.Priority
-                                    </span>
-                                    <br><small>@maintenance.ScheduledDate.ToString("dd/MM/yyyy")</small>
+                                <div class="flex-grow-1 ms-3">
+                                    <div class="fw-bold">Maintenance programmée</div>
+                                    <small class="text-muted">Type: @maintenance.MaintenanceType</small>
+                                    <div class="small text-muted">
+                                        Prévue le @maintenance.ScheduledDate.ToString("dd/MM/yyyy")
+                                    </div>
                                 </div>
                             </div>
                         }
                         <div class="text-center mt-3">
-                            <a href="/maintenances" class="btn btn-outline-primary btn-sm">Voir tout</a>
+                            <a href="/maintenance" class="btn btn-sm btn-outline-primary">
+                                Voir toutes les maintenances
+                            </a>
                         </div>
                     }
                     else
                     {
-                        <p class="text-muted text-center">Aucune maintenance planifiée</p>
+                        <div class="text-center text-muted py-4">
+                            <i class="fas fa-check-circle fa-3x mb-3 text-success"></i>
+                            <p class="mb-0">Aucune maintenance programmée</p>
+                            <small>Toutes les maintenances sont à jour</small>
+                        </div>
                     }
                 </div>
             </div>
         </div>
 
-        <div class="col-md-6">
-            <div class="card">
+        <div class="col-xl-6">
+            <div class="card mb-4">
                 <div class="card-header">
-                    <h5 class="card-title mb-0">
-                        <i class="fas fa-exclamation-circle text-danger me-2"></i>
-                        Incidents récents
-                    </h5>
+                    <i class="fas fa-exclamation-triangle me-1"></i>
+                    Incidents Récents (@recentIncidents.Count)
                 </div>
                 <div class="card-body">
-                    @if (recentIncidents?.Any() == true)
+                    @if (isLoading)
+                    {
+                        <div class="text-center py-4">
+                            <div class="spinner-border text-danger" role="status">
+                                <span class="visually-hidden">Chargement...</span>
+                            </div>
+                            <p class="mt-2 text-muted">Chargement des incidents...</p>
+                        </div>
+                    }
+                    else if (recentIncidents.Any())
                     {
                         @foreach (var incident in recentIncidents.Take(5))
                         {
-                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                <div>
-                                    <strong>@incident.VehicleLicensePlate</strong>
-                                    <br><small class="text-muted">@incident.IncidentType</small>
+                            <div class="d-flex align-items-center border-bottom py-3">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-exclamation-triangle text-danger fa-lg"></i>
                                 </div>
-                                <div class="text-end">
-                                    <span class="badge bg-@(GetSeverityBadgeClass(incident.Severity.ToString()))">
-                                        @incident.Severity
-                                    </span>
-                                    <br><small>@incident.IncidentDate.ToString("dd/MM/yyyy")</small>
+                                <div class="flex-grow-1 ms-3">
+                                    <div class="fw-bold">Incident déclaré</div>
+                                    <small class="text-muted">Type: @incident.IncidentType</small>
+                                    <div class="small text-muted">
+                                        Le @incident.IncidentDate.ToString("dd/MM/yyyy HH:mm")
+                                    </div>
                                 </div>
                             </div>
                         }
                         <div class="text-center mt-3">
-                            <a href="/incidents" class="btn btn-outline-danger btn-sm">Voir tout</a>
+                            <a href="/incidents" class="btn btn-sm btn-outline-danger">
+                                Voir tous les incidents
+                            </a>
                         </div>
                     }
                     else
                     {
-                        <p class="text-muted text-center">Aucun incident récent</p>
+                        <div class="text-center text-muted py-4">
+                            <i class="fas fa-smile fa-3x mb-3 text-success"></i>
+                            <p class="mb-0">Aucun incident récent</p>
+                            <small>Tout va bien dans votre flotte</small>
+                        </div>
                     }
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="row mt-4">
+    <!-- Aperçu rapide des véhicules -->
+    <div class="row">
         <div class="col-12">
-            <div class="card">
+            <div class="card mb-4">
                 <div class="card-header">
-                    <h5 class="card-title mb-0">
-                        <i class="fas fa-tachometer-alt me-2"></i>
-                        Actions rapides
-                    </h5>
+                    <i class="fas fa-car me-1"></i>
+                    Aperçu des Véhicules
                 </div>
                 <div class="card-body">
-                    <div class="row g-3">
-                        <div class="col-md-3">
-                            <a href="/vehicles" class="btn btn-outline-primary d-block">
-                                <i class="fas fa-plus me-2"></i>
-                                Nouveau véhicule
+                    @if (isLoading)
+                    {
+                        <div class="text-center py-4">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Chargement...</span>
+                            </div>
+                            <p class="mt-2 text-muted">Chargement des véhicules...</p>
+                        </div>
+                    }
+                    else if (recentVehicles.Any())
+                    {
+                        <div class="row">
+                            @foreach (var vehicle in recentVehicles.Take(4))
+                            {
+                                <div class="col-lg-3 col-md-6 mb-3">
+                                    <div class="card border-left-primary h-100">
+                                        <div class="card-body p-3">
+                                            <div class="d-flex align-items-center">
+                                                <div class="flex-shrink-0">
+                                                    <i class="fas fa-car fa-2x text-primary"></i>
+                                                </div>
+                                                <div class="flex-grow-1 ms-3">
+                                                    <div class="fw-bold">@vehicle.LicensePlate</div>
+                                                    <small class="text-muted">@vehicle.Brand @vehicle.Model</small>
+                                                    <div class="small text-muted">
+                                                        @vehicle.CurrentMileage.ToString("N0") km
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                        <div class="text-center mt-3">
+                            <a href="/vehicles" class="btn btn-primary">
+                                Voir tous les véhicules (@vehicleCount)
                             </a>
                         </div>
-                        <div class="col-md-3">
-                            <a href="/drivers" class="btn btn-outline-success d-block">
-                                <i class="fas fa-user-plus me-2"></i>
-                                Nouveau conducteur
+                    }
+                    else
+                    {
+                        <div class="text-center text-muted py-4">
+                            <i class="fas fa-car fa-3x mb-3"></i>
+                            <p class="mb-0">Aucun véhicule enregistré</p>
+                            <a href="/vehicles" class="btn btn-primary mt-2">
+                                Ajouter un véhicule
                             </a>
                         </div>
-                        <div class="col-md-3">
-                            <a href="/maintenances" class="btn btn-outline-warning d-block">
-                                <i class="fas fa-tools me-2"></i>
-                                Planifier maintenance
-                            </a>
-                        </div>
-                        <div class="col-md-3">
-                            <a href="/incidents" class="btn btn-outline-danger d-block">
-                                <i class="fas fa-exclamation-triangle me-2"></i>
-                                Signaler incident
-                            </a>
-                        </div>
-                    </div>
+                    }
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- Message d'erreur -->
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="row">
+            <div class="col-12">
+                <div class="alert alert-danger" role="alert">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Erreur lors du chargement des données: @errorMessage
+                    <button type="button" class="btn btn-sm btn-outline-danger ms-3" @onclick="LoadDashboardData">
+                        <i class="fas fa-redo me-1"></i> Réessayer
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
 </div>
 
 @code {
+    // États de chargement
     private bool isLoading = true;
+    private string errorMessage = string.Empty;
+
+    // Données du tableau de bord
     private int vehicleCount = 0;
-    private int driverCount = 0;
+    private int driverCount = 0;  
     private int maintenanceCount = 0;
     private int incidentCount = 0;
-    
-    private List<MaintenanceDto>? upcomingMaintenances;
-    private List<IncidentDto>? recentIncidents;
+
+    // Listes pour les sections détaillées
+    private List<MaintenanceDto> upcomingMaintenances = new();
+    private List<IncidentDto> recentIncidents = new();
+    private List<VehicleDto> recentVehicles = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -239,27 +372,25 @@
 
     private async Task LoadDashboardData()
     {
-        isLoading = true;
-        StateHasChanged();
-
         try
         {
-            // Charger les compteurs
-            var vehiclesTask = LoadVehicleCount();
-            var driversTask = LoadDriverCount();
-            var maintenancesTask = LoadMaintenanceCount();
-            var incidentsTask = LoadIncidentCount();
+            isLoading = true;
+            errorMessage = string.Empty;
+            StateHasChanged();
 
-            // Charger les données pour les widgets
-            var upcomingMaintenancesTask = LoadUpcomingMaintenances();
-            var recentIncidentsTask = LoadRecentIncidents();
-
-            await Task.WhenAll(vehiclesTask, driversTask, maintenancesTask, incidentsTask,
-                              upcomingMaintenancesTask, recentIncidentsTask);
+            // Charger les données de façon séquentielle pour éviter les conflits DbContext
+            await LoadVehicleCount();
+            await LoadDriverCount();
+            await LoadMaintenanceCount();
+            await LoadIncidentCount();
+            await LoadUpcomingMaintenances();
+            await LoadRecentIncidents();
+            await LoadRecentVehicles();
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            // En cas d'erreur, on continue sans afficher d'erreur pour ne pas casser le tableau de bord
+            errorMessage = $"Erreur lors du chargement du dashboard : {ex.Message}";
+            Console.WriteLine($"Erreur dashboard: {ex}");
         }
         finally
         {
@@ -272,15 +403,13 @@
     {
         try
         {
-            var query = new GetVehiclesQuery { PageSize = 1 };
+            var query = new GetVehiclesQuery { Page = 1, PageSize = 1 };
             var result = await Mediator.Send(query);
-            if (result.IsSuccess && result.Value != null)
-            {
-                vehicleCount = result.Value.TotalCount;
-            }
+            vehicleCount = result.IsSuccess ? result.Data!.TotalCount : 0;
         }
-        catch
+        catch (Exception ex)
         {
+            Console.WriteLine($"Erreur chargement véhicules: {ex.Message}");
             vehicleCount = 0;
         }
     }
@@ -289,15 +418,13 @@
     {
         try
         {
-            var query = new GetAllDriversQuery { PageSize = 1 };
+            var query = new GetAllDriversQuery { Page = 1, PageSize = 1 };
             var result = await Mediator.Send(query);
-            if (result.IsSuccess && result.Value != null)
-            {
-                driverCount = result.Value.TotalCount;
-            }
+            driverCount = result.IsSuccess ? result.Data!.TotalCount : 0;
         }
-        catch
+        catch (Exception ex)
         {
+            Console.WriteLine($"Erreur chargement conducteurs: {ex.Message}");
             driverCount = 0;
         }
     }
@@ -306,15 +433,13 @@
     {
         try
         {
-            var query = new GetAllMaintenancesQuery { PageSize = 1 };
+            var query = new GetAllMaintenancesQuery { Page = 1, PageSize = 1 };
             var result = await Mediator.Send(query);
-            if (result.IsSuccess && result.Value != null)
-            {
-                maintenanceCount = result.Value.TotalCount;
-            }
+            maintenanceCount = result.IsSuccess ? result.Data!.TotalCount : 0;
         }
-        catch
+        catch (Exception ex)
         {
+            Console.WriteLine($"Erreur chargement maintenances: {ex.Message}");
             maintenanceCount = 0;
         }
     }
@@ -323,15 +448,13 @@
     {
         try
         {
-            var query = new GetAllIncidentsQuery { PageSize = 1 };
+            var query = new GetAllIncidentsQuery { Page = 1, PageSize = 1 };
             var result = await Mediator.Send(query);
-            if (result.IsSuccess && result.Value != null)
-            {
-                incidentCount = result.Value.TotalCount;
-            }
+            incidentCount = result.IsSuccess ? result.Data!.TotalCount : 0;
         }
-        catch
+        catch (Exception ex)
         {
+            Console.WriteLine($"Erreur chargement incidents: {ex.Message}");
             incidentCount = 0;
         }
     }
@@ -340,15 +463,13 @@
     {
         try
         {
-            var query = new GetUpcomingMaintenancesQuery { MaxRecords = 10 };
+            var query = new GetAllMaintenancesQuery { Page = 1, PageSize = 5 };
             var result = await Mediator.Send(query);
-            if (result.IsSuccess && result.Value != null)
-            {
-                upcomingMaintenances = result.Value.ToList();
-            }
+            upcomingMaintenances = result.IsSuccess ? result.Data!.Items.ToList() : new List<MaintenanceDto>();
         }
-        catch
+        catch (Exception ex)
         {
+            Console.WriteLine($"Erreur chargement maintenances à venir: {ex.Message}");
             upcomingMaintenances = new List<MaintenanceDto>();
         }
     }
@@ -357,38 +478,29 @@
     {
         try
         {
-            var query = new GetAllIncidentsQuery 
-            { 
-                PageSize = 10,
-                Status = "Open" // Seulement les incidents ouverts
-            };
+            var query = new GetAllIncidentsQuery { Page = 1, PageSize = 5 };
             var result = await Mediator.Send(query);
-            if (result.IsSuccess && result.Value != null)
-            {
-                recentIncidents = result.Value.Items.ToList();
-            }
+            recentIncidents = result.IsSuccess ? result.Data!.Items.ToList() : new List<IncidentDto>();
         }
-        catch
+        catch (Exception ex)
         {
+            Console.WriteLine($"Erreur chargement incidents récents: {ex.Message}");
             recentIncidents = new List<IncidentDto>();
         }
     }
 
-    private static string GetPriorityBadgeClass(string priority) => priority?.ToLower() switch
+    private async Task LoadRecentVehicles()
     {
-        "low" => "success",
-        "medium" => "warning",
-        "high" => "danger",
-        "critical" => "dark",
-        _ => "secondary"
-    };
-
-    private static string GetSeverityBadgeClass(string severity) => severity?.ToLower() switch
-    {
-        "low" => "success",
-        "medium" => "warning",
-        "high" => "danger",
-        "critical" => "dark",
-        _ => "secondary"
-    };
+        try
+        {
+            var query = new GetVehiclesQuery { Page = 1, PageSize = 4 };
+            var result = await Mediator.Send(query);
+            recentVehicles = result.IsSuccess ? result.Data!.Items.ToList() : new List<VehicleDto>();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erreur chargement véhicules récents: {ex.Message}");
+            recentVehicles = new List<VehicleDto>();
+        }
+    }
 }

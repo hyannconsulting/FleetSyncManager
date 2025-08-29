@@ -12,6 +12,15 @@
 <PageTitle>Véhicules</PageTitle>
 
 <div class="container-fluid">
+    <!-- Messages de notification -->
+    @if (!string.IsNullOrEmpty(notificationMessage))
+    {
+        <div class="alert alert-@notificationClass alert-dismissible fade show" role="alert">
+            @notificationMessage
+            <button type="button" class="btn-close" @onclick="ClearNotification"></button>
+        </div>
+    }
+    
     <div class="row">
         <div class="col-12">
             <div class="card">
@@ -239,6 +248,35 @@
     </div>
 }
 
+<!-- Modal de confirmation de suppression -->
+@if (showDeleteConfirm)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title text-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Confirmer la suppression
+                    </h5>
+                    <button type="button" class="btn-close" @onclick="CancelDelete"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Êtes-vous sûr de vouloir supprimer le véhicule <strong>@vehicleToDeleteName</strong> ?</p>
+                    <p class="text-muted">Cette action est irréversible.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CancelDelete">
+                        Annuler
+                    </button>
+                    <button type="button" class="btn btn-danger" @onclick="ConfirmDelete">
+                        <i class="fas fa-trash me-1"></i>Supprimer
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
 @code {
     private PagedResult<VehicleDto>? pagedResult;
     private bool isLoading = true;
@@ -246,6 +284,15 @@
     private bool showModal = false;
     private int currentPage = 1;
     private int pageSize = 10;
+    
+    // Système de notifications
+    private string? notificationMessage;
+    private string notificationClass = "info";
+    
+    // Confirmation de suppression
+    private bool showDeleteConfirm = false;
+    private int vehicleToDeleteId = 0;
+    private string vehicleToDeleteName = "";
     
     private VehicleDto? editingVehicle;
     private VehicleForm vehicleForm = new();
@@ -283,10 +330,24 @@
         await LoadVehicles();
     }
     
+    private void ShowNotification(string message, string type = "info")
+    {
+        notificationMessage = message;
+        notificationClass = type;
+        StateHasChanged();
+    }
+    
+    private void ClearNotification()
+    {
+        notificationMessage = null;
+        StateHasChanged();
+    }
+    
     private async Task LoadVehicles(int page = 1)
     {
         isLoading = true;
         currentPage = page;
+        ClearNotification(); // Clear previous notifications
         
         try
         {
@@ -304,12 +365,12 @@
             }
             else
             {
-                await JSRuntime.InvokeVoidAsync("alert", "Erreur lors du chargement des véhicules");
+                ShowNotification("Erreur lors du chargement des véhicules", "danger");
             }
         }
         catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("alert", $"Erreur: {ex.Message}");
+            ShowNotification($"Erreur: {ex.Message}", "danger");
         }
         finally
         {
@@ -379,13 +440,13 @@
                 
                 if (result.IsSuccess)
                 {
-                    await JSRuntime.InvokeVoidAsync("alert", "Véhicule créé avec succès");
+                    ShowNotification("Véhicule créé avec succès", "success");
                     CloseModal();
                     await LoadVehicles(currentPage);
                 }
                 else
                 {
-                    await JSRuntime.InvokeVoidAsync("alert", "Erreur lors de la création du véhicule");
+                    ShowNotification("Erreur lors de la création du véhicule", "danger");
                 }
             }
             else
@@ -410,19 +471,19 @@
                 
                 if (result.IsSuccess)
                 {
-                    await JSRuntime.InvokeVoidAsync("alert", "Véhicule modifié avec succès");
+                    ShowNotification("Véhicule modifié avec succès", "success");
                     CloseModal();
                     await LoadVehicles(currentPage);
                 }
                 else
                 {
-                    await JSRuntime.InvokeVoidAsync("alert", "Erreur lors de la modification du véhicule");
+                    ShowNotification("Erreur lors de la modification du véhicule", "danger");
                 }
             }
         }
         catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("alert", $"Erreur: {ex.Message}");
+            ShowNotification($"Erreur: {ex.Message}", "danger");
         }
         finally
         {
@@ -431,29 +492,51 @@
         }
     }
     
-    private async Task DeleteVehicle(int id)
+    private void DeleteVehicle(int id)
     {
-        if (await JSRuntime.InvokeAsync<bool>("confirm", "Êtes-vous sûr de vouloir supprimer ce véhicule ?"))
+        var vehicle = pagedResult?.Items?.FirstOrDefault(v => v.Id == id);
+        if (vehicle != null)
         {
-            try
+            vehicleToDeleteId = id;
+            vehicleToDeleteName = $"{vehicle.Brand} {vehicle.Model} ({vehicle.LicensePlate})";
+            showDeleteConfirm = true;
+        }
+    }
+    
+    private void CancelDelete()
+    {
+        showDeleteConfirm = false;
+        vehicleToDeleteId = 0;
+        vehicleToDeleteName = "";
+    }
+    
+    private async Task ConfirmDelete()
+    {
+        showDeleteConfirm = false;
+        
+        try
+        {
+            var command = new DeleteVehicleCommand(vehicleToDeleteId);
+            var result = await Mediator.Send(command);
+            
+            if (result.IsSuccess)
             {
-                var command = new DeleteVehicleCommand(id);
-                var result = await Mediator.Send(command);
-                
-                if (result.IsSuccess)
-                {
-                    await JSRuntime.InvokeVoidAsync("alert", "Véhicule supprimé avec succès");
-                    await LoadVehicles(currentPage);
-                }
-                else
-                {
-                    await JSRuntime.InvokeVoidAsync("alert", "Erreur lors de la suppression du véhicule");
-                }
+                ShowNotification("Véhicule supprimé avec succès", "success");
+                await LoadVehicles(currentPage);
             }
-            catch (Exception ex)
+            else
             {
-                await JSRuntime.InvokeVoidAsync("alert", $"Erreur: {ex.Message}");
+                ShowNotification("Erreur lors de la suppression du véhicule", "danger");
             }
+        }
+        catch (Exception ex)
+        {
+            ShowNotification($"Erreur: {ex.Message}", "danger");
+        }
+        finally
+        {
+            vehicleToDeleteId = 0;
+            vehicleToDeleteName = "";
         }
     }
 

@@ -1,0 +1,14 @@
+{
+  "Servers": {
+    "1": {
+      "Name": "FleetManager - Development",
+      "Group": "Development",
+      "Port": 5432,
+      "Username": "fleetmanager",
+      "Host": "postgres",
+      "SSLMode": "prefer",
+      "MaintenanceDB": "fleetmanager_dev",
+      "PassFile": "/tmp/pgpassfile"
+    }
+  }
+}
