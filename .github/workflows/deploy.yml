@@ -1,0 +1,48 @@
+name: Deploy
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Build
+      run: dotnet build --no-restore --configuration Release
+
+    - name: Test
+      run: dotnet test --no-build --configuration Release --verbosity normal
+
+    - name: Publish Web
+      run: dotnet publish src/Laroche.FleetManager.Web --configuration Release --no-build --output ./publish-web
+
+    - name: Publish API  
+      run: dotnet publish src/Laroche.FleetManager.API --configuration Release --no-build --output ./publish-api
+
+    # TODO: Ajouter ici les étapes de déploiement vers votre serveur
+    # Exemples possibles:
+    # - Azure Web Apps
+    # - Docker Registry + Kubernetes
+    # - VPS avec rsync/SCP
+    # - Netlify/Vercel pour le frontend
+
+    - name: Deploy placeholder
+      run: |
+        echo "🚀 Déploiement prêt!"
+        echo "📦 Web app artifacts: ./publish-web"
+        echo "📦 API artifacts: ./publish-api"
+        echo "TODO: Configurer le déploiement selon l'infrastructure cible"

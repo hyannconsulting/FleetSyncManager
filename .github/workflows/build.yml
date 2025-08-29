@@ -1,0 +1,63 @@
+name: Build and Test
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: fleetmanager_test
+          POSTGRES_USER: fleetmanager
+          POSTGRES_PASSWORD: TestPassword123!
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Build
+      run: dotnet build --no-restore --configuration Release
+
+    - name: Test
+      run: dotnet test --no-build --configuration Release --verbosity normal
+      env:
+        ConnectionStrings__DefaultConnection: "Host=localhost;Port=5432;Database=fleetmanager_test;Username=fleetmanager;Password=TestPassword123!"
+
+    - name: Publish Web
+      run: dotnet publish src/Laroche.FleetManager.Web --configuration Release --no-build --output ./publish-web
+
+    - name: Publish API
+      run: dotnet publish src/Laroche.FleetManager.API --configuration Release --no-build --output ./publish-api
+
+    - name: Upload Web Artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: web-app
+        path: ./publish-web
+
+    - name: Upload API Artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: api-app
+        path: ./publish-api

@@ -1,0 +1,51 @@
+name: Code Quality
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  code-quality:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Build
+      run: dotnet build --no-restore --configuration Release
+
+    - name: Run Code Analysis
+      run: |
+        dotnet format --verify-no-changes --verbosity diagnostic
+        echo "✅ Code formatting check passed"
+
+    - name: Security Scan
+      run: |
+        dotnet list package --vulnerable --include-transitive || true
+        echo "🔒 Security scan completed"
+
+    - name: Dependency Check
+      run: |
+        dotnet list package --outdated || true
+        echo "📦 Dependency check completed"
+
+    - name: Test Coverage
+      run: |
+        dotnet test --configuration Release --collect:"XPlat Code Coverage" --results-directory ./coverage
+        echo "📊 Test coverage generated"
+
+    - name: Upload Coverage
+      uses: actions/upload-artifact@v3
+      with:
+        name: code-coverage
+        path: ./coverage
