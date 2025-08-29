@@ -51,13 +51,13 @@ jobs:
       run: dotnet publish src/Laroche.FleetManager.API --configuration Release --no-build --output ./publish-api
 
     - name: Upload Web Artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: web-app
         path: ./publish-web
 
     - name: Upload API Artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: api-app
         path: ./publish-api

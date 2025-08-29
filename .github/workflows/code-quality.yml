@@ -45,7 +45,7 @@ jobs:
         echo "📊 Test coverage generated"
 
     - name: Upload Coverage
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: code-coverage
         path: ./coverage
