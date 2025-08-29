@@ -104,3 +104,8 @@ finally
 {
     Log.CloseAndFlush();
 }
+
+/// <summary>
+/// Classe Program publique pour permettre les tests d'intégration
+/// </summary>
+public partial class Program { }
