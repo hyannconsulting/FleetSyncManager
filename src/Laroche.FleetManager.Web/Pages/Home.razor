@@ -1,4 +1,6 @@
 @page "/accueil"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
 @inject IVehicleApiService VehicleService
 @inject IDriverApiService DriverService
 

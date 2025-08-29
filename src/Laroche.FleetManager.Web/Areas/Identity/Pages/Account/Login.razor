@@ -1,0 +1,224 @@
+@page "/Identity/Account/Login"
+@using Microsoft.AspNetCore.Authorization
+@using Laroche.FleetManager.Application.Interfaces
+@using Laroche.FleetManager.Domain.Entities
+@using System.ComponentModel.DataAnnotations
+@inject IAuthenticationService AuthenticationService
+@inject ILoginAuditService LoginAuditService
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+@attribute [AllowAnonymous]
+
+<PageTitle>Connexion - FleetSyncManager</PageTitle>
+
+<div class="min-vh-100 d-flex align-items-center justify-content-center bg-light">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-10 col-lg-8 col-xl-6">
+                <div class="card shadow-lg border-0 rounded-lg mt-5">
+                    <div class="card-header bg-primary text-white text-center py-4">
+                        <h3 class="font-weight-light my-2">
+                            <i class="fas fa-truck me-2"></i>
+                            FleetSyncManager
+                        </h3>
+                        <p class="mb-0">Système de Gestion de Flotte</p>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="row g-0">
+                            <!-- Panneau de connexion -->
+                            <div class="col-md-8 p-5">
+                                <h4 class="mb-4 text-center">
+                                    <i class="fas fa-sign-in-alt me-2 text-primary"></i>
+                                    Connexion
+                                </h4>
+
+                                @if (!string.IsNullOrEmpty(ErrorMessage))
+                                {
+                                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                        <i class="fas fa-exclamation-circle me-2"></i>
+                                        @ErrorMessage
+                                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                    </div>
+                                }
+
+                                @if (IsLoading)
+                                {
+                                    <div class="text-center py-4">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="visually-hidden">Connexion en cours...</span>
+                                        </div>
+                                        <p class="mt-2 text-muted">Connexion en cours...</p>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <EditForm Model="@LoginModel" OnValidSubmit="@HandleLoginSubmit" FormName="LoginForm">
+                                        <DataAnnotationsValidator />
+
+                                        <div class="form-floating mb-3">
+                                            <InputText @bind-Value="LoginModel.Email" 
+                                                      class="form-control" 
+                                                      id="email" 
+                                                      placeholder="nom@exemple.com"
+                                                      autocomplete="email" />
+                                            <label for="email">Adresse email</label>
+                                            <ValidationMessage For="() => LoginModel.Email" class="text-danger" />
+                                        </div>
+
+                                        <div class="form-floating mb-3">
+                                            <div class="position-relative">
+                                                <InputText @bind-Value="LoginModel.Password" 
+                                                          type="@(ShowPassword ? "text" : "password")"
+                                                          class="form-control pe-5" 
+                                                          id="password" 
+                                                          placeholder="Mot de passe"
+                                                          autocomplete="current-password" />
+                                                <button type="button" 
+                                                        class="btn btn-link position-absolute top-50 end-0 translate-middle-y pe-3 border-0"
+                                                        @onclick="TogglePasswordVisibility"
+                                                        tabindex="-1">
+                                                    <i class="fas @(ShowPassword ? "fa-eye-slash" : "fa-eye") text-muted"></i>
+                                                </button>
+                                            </div>
+                                            <label for="password">Mot de passe</label>
+                                            <ValidationMessage For="() => LoginModel.Password" class="text-danger" />
+                                        </div>
+
+                                        <div class="form-check mb-3">
+                                            <InputCheckbox @bind-Value="LoginModel.RememberMe" class="form-check-input" id="rememberMe" />
+                                            <label class="form-check-label" for="rememberMe">
+                                                Se souvenir de moi
+                                            </label>
+                                        </div>
+
+                                        <div class="d-grid gap-2">
+                                            <button type="submit" class="btn btn-primary btn-lg" disabled="@IsLoading">
+                                                <i class="fas fa-sign-in-alt me-2"></i>
+                                                Se connecter
+                                            </button>
+                                        </div>
+                                    </EditForm>
+
+                                    <hr class="my-4">
+                                    <div class="text-center">
+                                        <a href="/Identity/Account/Register" class="text-decoration-none">
+                                            <i class="fas fa-user-plus me-2"></i>
+                                            Créer un nouveau compte
+                                        </a>
+                                    </div>
+                                }
+                            </div>
+
+                            <!-- Panneau d'information -->
+                            <div class="col-md-4 bg-primary text-white p-4 d-flex flex-column justify-content-center">
+                                <div class="text-center">
+                                    <i class="fas fa-shield-alt fa-3x mb-4 opacity-75"></i>
+                                    <h5 class="mb-3">Connexion Sécurisée</h5>
+                                    <p class="mb-4 small">
+                                        Accédez à votre tableau de bord de gestion de flotte en toute sécurité.
+                                    </p>
+                                    
+                                    <div class="border-top border-light pt-3 mt-3">
+                                        <h6 class="mb-2">
+                                            <i class="fas fa-info-circle me-2"></i>
+                                            Compte de démonstration
+                                        </h6>
+                                        <small class="d-block mb-1">
+                                            <strong>Email:</strong> admin@fleetsyncmanager.com
+                                        </small>
+                                        <small class="d-block">
+                                            <strong>Mot de passe:</strong> Admin123!@@#
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [SupplyParameterFromForm]
+    public LoginFormModel LoginModel { get; set; } = new();
+    
+    public bool IsLoading { get; set; } = false;
+    public bool ShowPassword { get; set; } = false;
+    public string? ErrorMessage { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        // La page de login est accessible à tous
+        await Task.CompletedTask;
+    }
+
+    private async Task HandleLoginSubmit()
+    {
+        try
+        {
+            IsLoading = true;
+            ErrorMessage = null;
+            StateHasChanged();
+
+            var result = await AuthenticationService.LoginAsync(
+                LoginModel.Email,
+                LoginModel.Password,
+                LoginModel.RememberMe,
+                GetClientIpAddress(),
+                GetUserAgent()
+            );
+
+            if (result.IsSuccess)
+            {
+                // Redirection après connexion réussie
+                Navigation.NavigateTo("/", true);
+            }
+            else
+            {
+                ErrorMessage = result.Message ?? "Erreur de connexion. Vérifiez vos identifiants.";
+            }
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = "Une erreur inattendue s'est produite. Veuillez réessayer.";
+            Console.WriteLine($"Erreur de connexion: {ex.Message}");
+        }
+        finally
+        {
+            IsLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void TogglePasswordVisibility()
+    {
+        ShowPassword = !ShowPassword;
+    }
+
+    private string GetClientIpAddress()
+    {
+        // En développement, retourner une IP fictive
+        return "127.0.0.1";
+    }
+
+    private string GetUserAgent()
+    {
+        // En développement, retourner un User-Agent fictif
+        return "FleetSyncManager/1.0";
+    }
+
+    public class LoginFormModel
+    {
+        [Required(ErrorMessage = "L'adresse email est obligatoire.")]
+        [EmailAddress(ErrorMessage = "Format d'email invalide.")]
+        public string Email { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Le mot de passe est obligatoire.")]
+        [StringLength(100, MinimumLength = 6, ErrorMessage = "Le mot de passe doit contenir au moins 6 caractères.")]
+        public string Password { get; set; } = string.Empty;
+
+        public bool RememberMe { get; set; } = false;
+    }
+}

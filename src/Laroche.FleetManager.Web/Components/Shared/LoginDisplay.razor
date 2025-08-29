@@ -1,0 +1,60 @@
+@using Microsoft.AspNetCore.Identity
+@using Laroche.FleetManager.Domain.Entities
+@inject SignInManager<ApplicationUser> SignInManager
+@inject UserManager<ApplicationUser> UserManager
+
+<AuthorizeView>
+    <Authorized>
+        <div class="navbar-nav ms-auto">
+            <div class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle text-light" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-user-circle me-1"></i>
+                    @{
+                        var user = context.User;
+                        var name = user?.Identity?.Name ?? "Utilisateur";
+                        if (name.Contains("@"))
+                        {
+                            name = name.Split('@')[0];
+                        }
+                    }
+                    Bonjour, @name
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li>
+                        <a class="dropdown-item" href="/Account/Profile">
+                            <i class="fas fa-user me-2"></i>
+                            Mon profil
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="/Account/Settings">
+                            <i class="fas fa-cog me-2"></i>
+                            Paramètres
+                        </a>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <form method="post" action="/Account/Logout">
+                            <button type="submit" class="dropdown-item text-danger">
+                                <i class="fas fa-sign-out-alt me-2"></i>
+                                Se déconnecter
+                            </button>
+                        </form>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </Authorized>
+    <NotAuthorized>
+        <div class="navbar-nav ms-auto">
+            <a class="nav-link text-light me-2" href="/Account/Register">
+                <i class="fas fa-user-plus me-1"></i>
+                S'inscrire
+            </a>
+            <a class="nav-link text-light" href="/Account/Login">
+                <i class="fas fa-sign-in-alt me-1"></i>
+                Se connecter
+            </a>
+        </div>
+    </NotAuthorized>
+</AuthorizeView>

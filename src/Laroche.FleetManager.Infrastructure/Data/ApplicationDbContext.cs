@@ -8,7 +8,7 @@ namespace Laroche.FleetManager.Infrastructure.Data
     /// <summary>
     /// Contexte de base de données principal pour FleetSyncManager
     /// </summary>
-    public class ApplicationDbContext : IdentityDbContext
+    public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options)
@@ -37,6 +37,11 @@ namespace Laroche.FleetManager.Infrastructure.Data
         /// </summary>
         public DbSet<MaintenanceRecord> MaintenanceRecords { get; set; } = null!;
 
+        /// <summary>
+        /// Audit des connexions utilisateur
+        /// </summary>
+        public DbSet<LoginAudit> LoginAudits { get; set; } = null!;
+
         #endregion
 
         protected override void OnModelCreating(ModelBuilder builder)
@@ -56,7 +61,7 @@ namespace Laroche.FleetManager.Infrastructure.Data
         private static void ConfigureIdentityTables(ModelBuilder builder)
         {
             // Préfixer les tables Identity
-            builder.Entity<Microsoft.AspNetCore.Identity.IdentityUser>()
+            builder.Entity<ApplicationUser>()
                 .ToTable("Users");
             
             builder.Entity<Microsoft.AspNetCore.Identity.IdentityRole>()
@@ -76,6 +81,19 @@ namespace Laroche.FleetManager.Infrastructure.Data
                 
             builder.Entity<Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>>()
                 .ToTable("RoleClaims");
+
+            // Configuration des relations pour ApplicationUser
+            builder.Entity<ApplicationUser>()
+                .HasMany(u => u.LoginAudits)
+                .WithOne(la => la.User)
+                .HasForeignKey(la => la.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<ApplicationUser>()
+                .HasOne(u => u.Driver)
+                .WithOne()
+                .HasForeignKey<ApplicationUser>(u => u.DriverId)
+                .OnDelete(DeleteBehavior.SetNull);
         }
 
         /// <summary>

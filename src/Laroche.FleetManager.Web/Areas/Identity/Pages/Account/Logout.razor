@@ -1,0 +1,142 @@
+@page "/Account/Logout"
+@using Microsoft.AspNetCore.Identity
+@using Laroche.FleetManager.Domain.Entities
+@using Laroche.FleetManager.Application.Interfaces
+@inject SignInManager<ApplicationUser> SignInManager
+@inject ILoginAuditService AuditService
+@inject ILogger<Logout> Logger
+@inject NavigationManager NavigationManager
+
+<PageTitle>Déconnexion - FleetSyncManager</PageTitle>
+
+<div class="container-fluid vh-100 d-flex align-items-center justify-content-center">
+    <div class="text-center">
+        <div class="card shadow-lg border-0" style="max-width: 400px;">
+            <div class="card-body p-5">
+                @if (isLoggingOut)
+                {
+                    <div class="text-center">
+                        <div class="spinner-border text-primary mb-3" role="status">
+                            <span class="visually-hidden">Déconnexion en cours...</span>
+                        </div>
+                        <h3 class="text-primary">Déconnexion en cours...</h3>
+                        <p class="text-muted">Veuillez patienter</p>
+                    </div>
+                }
+                else if (isLoggedOut)
+                {
+                    <div class="text-center">
+                        <i class="fas fa-check-circle text-success fa-3x mb-3"></i>
+                        <h3 class="text-success mb-3">Déconnexion réussie</h3>
+                        <p class="text-muted mb-4">
+                            Vous avez été déconnecté avec succès de FleetSyncManager.
+                        </p>
+                        <div class="d-grid">
+                            <a href="/Account/Login" class="btn btn-primary">
+                                <i class="fas fa-sign-in-alt me-2"></i>
+                                Se reconnecter
+                            </a>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center">
+                        <i class="fas fa-sign-out-alt text-warning fa-3x mb-3"></i>
+                        <h3 class="mb-3">Confirmer la déconnexion</h3>
+                        <p class="text-muted mb-4">
+                            Êtes-vous sûr de vouloir vous déconnecter de FleetSyncManager ?
+                        </p>
+                        <div class="d-grid gap-2">
+                            <form method="post" @onsubmit="LogoutUser" @formname="logout">
+                                <AntiforgeryToken />
+                                <button type="submit" class="btn btn-warning w-100 mb-2">
+                                    <i class="fas fa-sign-out-alt me-2"></i>
+                                    Oui, me déconnecter
+                                </button>
+                            </form>
+                            <a href="/" class="btn btn-secondary w-100">
+                                <i class="fas fa-arrow-left me-2"></i>
+                                Annuler
+                            </a>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private bool isLoggingOut = false;
+    private bool isLoggedOut = false;
+
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Si l'utilisateur n'est pas connecté, rediriger vers la page de connexion
+        if (HttpContext.User?.Identity?.IsAuthenticated != true)
+        {
+            NavigationManager.NavigateTo("/Account/Login", replace: true);
+            return;
+        }
+
+        // Si c'est une requête POST, procéder automatiquement à la déconnexion
+        if (HttpMethods.IsPost(HttpContext.Request.Method))
+        {
+            await PerformLogout();
+        }
+    }
+
+    private async Task LogoutUser()
+    {
+        await PerformLogout();
+    }
+
+    private async Task PerformLogout()
+    {
+        isLoggingOut = true;
+        
+        try
+        {
+            var user = HttpContext.User;
+            var userEmail = user?.Identity?.Name ?? "Unknown";
+            var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown";
+            var userAgent = HttpContext.Request.Headers.UserAgent.ToString();
+
+            // Logger la déconnexion
+            Logger.LogInformation("Début de déconnexion pour l'utilisateur {Email} depuis {IpAddress}", userEmail, ipAddress);
+
+            // Enregistrer l'audit de déconnexion
+            if (user?.Identity?.IsAuthenticated == true)
+            {
+                await AuditService.LogLogoutAsync(userEmail, ipAddress, userAgent, true, "Déconnexion utilisateur");
+            }
+
+            // Déconnexion via SignInManager
+            await SignInManager.SignOutAsync();
+
+            Logger.LogInformation("Déconnexion réussie pour l'utilisateur {Email}", userEmail);
+
+            isLoggingOut = false;
+            isLoggedOut = true;
+
+            // Attendre un moment pour afficher le message de confirmation
+            StateHasChanged();
+            await Task.Delay(2000);
+
+            // Rediriger vers la page de connexion
+            NavigationManager.NavigateTo("/Account/Login", replace: true);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Erreur lors de la déconnexion");
+            isLoggingOut = false;
+            
+            // En cas d'erreur, rediriger quand même vers la page de connexion
+            NavigationManager.NavigateTo("/Account/Login", replace: true);
+        }
+    }
+}

@@ -1,0 +1,302 @@
+@page "/Account/Register"
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Components.Web
+@using System.ComponentModel.DataAnnotations
+@using Laroche.FleetManager.Domain.Entities
+@using Laroche.FleetManager.Application.DTOs.Users
+@using Laroche.FleetManager.Application.Interfaces
+@inject UserManager<ApplicationUser> UserManager
+@inject IUserService UserService
+@inject ILogger<Register> Logger
+@inject NavigationManager NavigationManager
+
+<PageTitle>Inscription - FleetSyncManager</PageTitle>
+
+<div class="container-fluid vh-100">
+    <div class="row h-100">
+        <!-- Panneau gauche avec informations -->
+        <div class="col-lg-6 d-none d-lg-flex bg-success text-white flex-column justify-content-center align-items-center">
+            <div class="text-center">
+                <h1 class="display-4 fw-bold mb-4">
+                    <i class="fas fa-user-plus"></i>
+                    Rejoignez-nous
+                </h1>
+                <p class="lead mb-4">Créez votre compte FleetSyncManager</p>
+                <div class="row text-center">
+                    <div class="col-4">
+                        <i class="fas fa-shield-alt fa-2x mb-2"></i>
+                        <p class="small">Sécurisé</p>
+                    </div>
+                    <div class="col-4">
+                        <i class="fas fa-clock fa-2x mb-2"></i>
+                        <p class="small">Rapide</p>
+                    </div>
+                    <div class="col-4">
+                        <i class="fas fa-check-circle fa-2x mb-2"></i>
+                        <p class="small">Fiable</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panneau droit avec formulaire d'inscription -->
+        <div class="col-lg-6 col-12 d-flex align-items-center justify-content-center">
+            <div class="card shadow-lg border-0" style="width: 100%; max-width: 500px;">
+                <div class="card-body p-5">
+                    <div class="text-center mb-4">
+                        <h2 class="card-title fw-bold text-dark">Créer un compte</h2>
+                        <p class="text-muted">Remplissez les informations ci-dessous</p>
+                    </div>
+
+                    <EditForm Model="Input" method="post" OnValidSubmit="RegisterUser" FormName="register" class="needs-validation" novalidate>
+                        <DataAnnotationsValidator />
+                        
+                        @if (!string.IsNullOrEmpty(errorMessage))
+                        {
+                            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                @errorMessage
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        }
+
+                        @if (!string.IsNullOrEmpty(successMessage))
+                        {
+                            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                                <i class="fas fa-check-circle me-2"></i>
+                                @successMessage
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        }
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="firstName" class="form-label">
+                                    <i class="fas fa-user me-1"></i>
+                                    Prénom *
+                                </label>
+                                <InputText @bind-Value="Input.FirstName" class="form-control" 
+                                          id="firstName" placeholder="Votre prénom" />
+                                <ValidationMessage For="() => Input.FirstName" class="text-danger small" />
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="lastName" class="form-label">
+                                    <i class="fas fa-user me-1"></i>
+                                    Nom *
+                                </label>
+                                <InputText @bind-Value="Input.LastName" class="form-control" 
+                                          id="lastName" placeholder="Votre nom" />
+                                <ValidationMessage For="() => Input.LastName" class="text-danger small" />
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="email" class="form-label">
+                                <i class="fas fa-envelope me-1"></i>
+                                Email *
+                            </label>
+                            <InputText @bind-Value="Input.Email" class="form-control" 
+                                      id="email" placeholder="votre.email@example.com" autocomplete="username" />
+                            <ValidationMessage For="() => Input.Email" class="text-danger small" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="phoneNumber" class="form-label">
+                                <i class="fas fa-phone me-1"></i>
+                                Numéro de téléphone
+                            </label>
+                            <InputText @bind-Value="Input.PhoneNumber" class="form-control" 
+                                      id="phoneNumber" placeholder="+33 1 23 45 67 89" />
+                            <ValidationMessage For="() => Input.PhoneNumber" class="text-danger small" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="role" class="form-label">
+                                <i class="fas fa-user-tag me-1"></i>
+                                Rôle *
+                            </label>
+                            <InputSelect @bind-Value="Input.Role" class="form-select" id="role">
+                                <option value="">-- Sélectionner un rôle --</option>
+                                <option value="Driver">Conducteur</option>
+                                <option value="FleetManager">Gestionnaire de flotte</option>
+                                <option value="Admin">Administrateur</option>
+                            </InputSelect>
+                            <ValidationMessage For="() => Input.Role" class="text-danger small" />
+                            <div class="form-text small">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Le rôle détermine vos permissions dans l'application
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="password" class="form-label">
+                                <i class="fas fa-lock me-1"></i>
+                                Mot de passe *
+                            </label>
+                            <InputText type="password" @bind-Value="Input.Password" class="form-control" 
+                                      id="password" placeholder="Votre mot de passe" autocomplete="new-password" />
+                            <ValidationMessage For="() => Input.Password" class="text-danger small" />
+                            <div class="form-text small">
+                                <i class="fas fa-info-circle me-1"></i>
+                                8 caractères minimum, avec majuscules, chiffres et caractères spéciaux
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="confirmPassword" class="form-label">
+                                <i class="fas fa-lock me-1"></i>
+                                Confirmer le mot de passe *
+                            </label>
+                            <InputText type="password" @bind-Value="Input.ConfirmPassword" class="form-control" 
+                                      id="confirmPassword" placeholder="Confirmer votre mot de passe" autocomplete="new-password" />
+                            <ValidationMessage For="() => Input.ConfirmPassword" class="text-danger small" />
+                        </div>
+
+                        <div class="form-check mb-4">
+                            <InputCheckbox @bind-Value="Input.AcceptTerms" class="form-check-input" id="acceptTerms" />
+                            <label class="form-check-label" for="acceptTerms">
+                                J'accepte les <a href="/terms" target="_blank">conditions d'utilisation</a> 
+                                et la <a href="/privacy" target="_blank">politique de confidentialité</a> *
+                            </label>
+                            <ValidationMessage For="() => Input.AcceptTerms" class="text-danger small" />
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-success btn-lg" disabled="@isLoading">
+                                @if (isLoading)
+                                {
+                                    <span class="spinner-border spinner-border-sm me-2"></span>
+                                    @("Création en cours...")
+                                }
+                                else
+                                {
+                                    <i class="fas fa-user-plus me-2"></i>
+                                    @("Créer mon compte")
+                                }
+                            </button>
+                        </div>
+
+                        <div class="text-center mt-3">
+                            <p class="text-muted small">
+                                Vous avez déjà un compte ? 
+                                <a href="/Account/Login" class="text-decoration-none">Se connecter</a>
+                            </p>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string? errorMessage;
+    private string? successMessage;
+    private bool isLoading = false;
+
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
+    [SupplyParameterFromForm]
+    private InputModel Input { get; set; } = new();
+
+    protected override Task OnInitializedAsync()
+    {
+        // Si l'utilisateur est déjà connecté, rediriger vers la page d'accueil
+        var user = HttpContext.User;
+        if (user?.Identity?.IsAuthenticated == true)
+        {
+            NavigationManager.NavigateTo("/", replace: true);
+        }
+        
+        return Task.CompletedTask;
+    }
+
+    private async Task RegisterUser()
+    {
+        isLoading = true;
+        errorMessage = null;
+        successMessage = null;
+
+        try
+        {
+            // Créer l'utilisateur via notre service métier
+            var createUserDto = new Laroche.FleetManager.Application.DTOs.Users.CreateUserDto
+            {
+                Email = Input.Email!,
+                FirstName = Input.FirstName!,
+                LastName = Input.LastName!,
+                PhoneNumber = Input.PhoneNumber,
+                Role = Input.Role!,
+                Password = Input.Password!
+            };
+
+            var result = await UserService.CreateUserAsync(createUserDto);
+
+            if (result.IsSuccess)
+            {
+                successMessage = "Compte créé avec succès ! Vous pouvez maintenant vous connecter.";
+                
+                Logger.LogInformation("Nouveau compte créé pour {Email} avec le rôle {Role}", Input.Email, Input.Role);
+                
+                // Attendre un moment pour que l'utilisateur voie le message
+                StateHasChanged();
+                await Task.Delay(2000);
+                
+                // Rediriger vers la page de connexion
+                NavigationManager.NavigateTo("/Account/Login?message=AccountCreated", replace: true);
+            }
+            else
+            {
+                errorMessage = result.Message;
+                Logger.LogWarning("Échec de création de compte pour {Email}: {Message}", Input.Email, result.Message);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Erreur lors de la création du compte pour {Email}", Input.Email);
+            errorMessage = "Une erreur interne s'est produite. Veuillez réessayer.";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private sealed class InputModel
+    {
+        [Required(ErrorMessage = "Le prénom est obligatoire")]
+        [StringLength(50, ErrorMessage = "Le prénom ne peut pas dépasser 50 caractères")]
+        public string FirstName { get; set; } = "";
+
+        [Required(ErrorMessage = "Le nom est obligatoire")]
+        [StringLength(50, ErrorMessage = "Le nom ne peut pas dépasser 50 caractères")]
+        public string LastName { get; set; } = "";
+
+        [Required(ErrorMessage = "L'email est obligatoire")]
+        [EmailAddress(ErrorMessage = "Format d'email invalide")]
+        public string Email { get; set; } = "";
+
+        [Phone(ErrorMessage = "Format de numéro de téléphone invalide")]
+        public string? PhoneNumber { get; set; }
+
+        [Required(ErrorMessage = "Le rôle est obligatoire")]
+        public string Role { get; set; } = "";
+
+        [Required(ErrorMessage = "Le mot de passe est obligatoire")]
+        [StringLength(100, MinimumLength = 8, ErrorMessage = "Le mot de passe doit contenir entre 8 et 100 caractères")]
+        [DataType(DataType.Password)]
+        public string Password { get; set; } = "";
+
+        [Required(ErrorMessage = "La confirmation du mot de passe est obligatoire")]
+        [DataType(DataType.Password)]
+        [Compare("Password", ErrorMessage = "Les mots de passe ne correspondent pas")]
+        public string ConfirmPassword { get; set; } = "";
+
+        [Required(ErrorMessage = "Vous devez accepter les conditions d'utilisation")]
+        [Range(typeof(bool), "true", "true", ErrorMessage = "Vous devez accepter les conditions d'utilisation")]
+        public bool AcceptTerms { get; set; }
+    }
+}
