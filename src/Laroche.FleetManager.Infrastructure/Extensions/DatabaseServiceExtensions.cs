@@ -1,10 +1,10 @@
+using Laroche.FleetManager.Domain.Entities;
+using Laroche.FleetManager.Infrastructure.Configuration;
+using Laroche.FleetManager.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Laroche.FleetManager.Infrastructure.Configuration;
-using Laroche.FleetManager.Infrastructure.Data;
-using Laroche.FleetManager.Domain.Entities;
 
 namespace Laroche.FleetManager.Infrastructure.Extensions
 {
@@ -29,12 +29,12 @@ namespace Laroche.FleetManager.Infrastructure.Extensions
                 services.AddDbContext<ApplicationDbContext>(options =>
                 {
                     options.UseInMemoryDatabase(configuration.GetConnectionString("InMemoryConnection") ?? "InMemoryFleetManager");
-                    
+
                     if (dbSettings.EnableSensitiveDataLogging)
                     {
                         options.EnableSensitiveDataLogging();
                     }
-                    
+
                     if (dbSettings.EnableDetailedErrors)
                     {
                         options.EnableDetailedErrors();
@@ -54,12 +54,12 @@ namespace Laroche.FleetManager.Infrastructure.Extensions
                             maxRetryDelay: dbSettings.MaxRetryDelay,
                             errorCodesToAdd: null);
                     });
-                    
+
                     if (dbSettings.EnableSensitiveDataLogging)
                     {
                         options.EnableSensitiveDataLogging();
                     }
-                    
+
                     if (dbSettings.EnableDetailedErrors)
                     {
                         options.EnableDetailedErrors();
@@ -83,7 +83,7 @@ namespace Laroche.FleetManager.Infrastructure.Extensions
                 var context = services.GetRequiredService<ApplicationDbContext>();
                 var logger = services.GetRequiredService<ILogger<ApplicationDbContext>>();
                 var configuration = services.GetRequiredService<IConfiguration>();
-                
+
                 var dbSettings = new DatabaseSettings();
                 configuration.GetSection("DatabaseSettings").Bind(dbSettings);
 
@@ -131,8 +131,7 @@ namespace Laroche.FleetManager.Infrastructure.Extensions
                 // Création de conducteurs d'exemple
                 var drivers = new List<Driver>
                 {
-                    new Driver
-                    {
+                    new() {
                         FirstName = "Jean",
                         LastName = "Dupont",
                         Email = "jean.dupont@fleetmanager.com",
@@ -140,11 +139,11 @@ namespace Laroche.FleetManager.Infrastructure.Extensions
                         Address = "123 Rue de la Paix",
                         CreatedAt = DateTime.UtcNow
                     },
-                    new Driver
+                    new()
                     {
                         FirstName = "Marie",
                         LastName = "Martin",
-                        Email = "marie.martin@fleetmanager.com", 
+                        Email = "marie.martin@fleetmanager.com",
                         LicenseNumber = "MARTIN123456",
                         Address = "456 Avenue des Champs",
                         CreatedAt = DateTime.UtcNow
@@ -180,7 +179,7 @@ namespace Laroche.FleetManager.Infrastructure.Extensions
                 context.Vehicles.AddRange(vehicles);
                 await context.SaveChangesAsync();
 
-                logger.LogInformation("Données d'exemple créées avec succès: {DriverCount} conducteurs, {VehicleCount} véhicules", 
+                logger.LogInformation("Données d'exemple créées avec succès: {DriverCount} conducteurs, {VehicleCount} véhicules",
                     drivers.Count, vehicles.Count);
             }
             catch (Exception ex)

@@ -1,13 +1,6 @@
-using Laroche.FleetManager.Infrastructure.Extensions;
-using Laroche.FleetManager.Application.Mappings;
-using Laroche.FleetManager.Application.Interfaces;
-using Laroche.FleetManager.Infrastructure.Repositories;
-using Laroche.FleetManager.Infrastructure.Services;
-using Laroche.FleetManager.Infrastructure.Data;
-using Laroche.FleetManager.Domain.Entities;
-using Laroche.FleetManager.Domain.Constants;
-using Microsoft.AspNetCore.Identity;
-using MediatR;
+using Laroche.FleetManager.Web.Services;
+using Laroche.FleetManager.Web.Services.Auth;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -18,114 +11,79 @@ builder.Host.UseSerilog((context, configuration) =>
     configuration.ReadFrom.Configuration(context.Configuration);
 });
 
-// Configuration des services de base de données
-builder.Services.AddDatabaseServices(builder.Configuration);
-
 // Configuration IHttpContextAccessor pour accès au contexte HTTP
 builder.Services.AddHttpContextAccessor();
 
-// Configuration ASP.NET Core Identity selon TASK-002
-builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
+// Configuration du HttpClient pour l'API d'authentification
+builder.Services.AddHttpClient<IAuthApiService, AuthApiService>(client =>
 {
-    // Configuration mots de passe
-    options.Password.RequireDigit = true;
-    options.Password.RequireLowercase = true;
-    options.Password.RequireNonAlphanumeric = true;
-    options.Password.RequireUppercase = true;
-    options.Password.RequiredLength = 8;
-    options.Password.RequiredUniqueChars = 1;
-
-    // Configuration verrouillage selon TASK-002 (5 tentatives max)
-    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(30);
-    options.Lockout.MaxFailedAccessAttempts = 5;
-    options.Lockout.AllowedForNewUsers = true;
-
-    // Configuration utilisateur
-    options.User.AllowedUserNameCharacters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._@+";
-    options.User.RequireUniqueEmail = true;
-    
-    // Configuration connexion
-    options.SignIn.RequireConfirmedEmail = false; // Simplifier pour l'instant
-    options.SignIn.RequireConfirmedPhoneNumber = false;
-})
-.AddEntityFrameworkStores<ApplicationDbContext>()
-.AddDefaultTokenProviders();
-
-// Configuration cookies selon TASK-002 (session 30 minutes)
-builder.Services.ConfigureApplicationCookie(options =>
-{
-    options.LoginPath = "/Account/Login";
-    options.LogoutPath = "/Account/Logout";
-    options.AccessDeniedPath = "/Account/AccessDenied";
-    options.ExpireTimeSpan = TimeSpan.FromMinutes(30); // Session 30min selon TASK-002
-    options.SlidingExpiration = true;
-    options.Cookie.HttpOnly = true;
-    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+    // URL de base de l'API - à configurer selon l'environnement
+    var apiBaseUrl = builder.Configuration.GetValue<string>("ApiSettings:BaseUrl") ?? "https://localhost:7001";
+    client.BaseAddress = new Uri(apiBaseUrl);
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
 });
 
-// Enregistrement des services d'authentification TASK-002
-builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
-builder.Services.AddScoped<ILoginAuditService, LoginAuditService>();
+// Configuration des autres services API
+builder.Services.AddHttpClient<IVehicleApiService, VehicleApiService>(client =>
+{
+    var apiBaseUrl = builder.Configuration.GetValue<string>("ApiSettings:BaseUrl") ?? "https://localhost:7001";
+    client.BaseAddress = new Uri(apiBaseUrl);
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
+});
 
-// Configuration AutoMapper
-builder.Services.AddAutoMapper(typeof(VehicleMappingProfile), typeof(DriverMappingProfile));
+builder.Services.AddHttpClient<IDriverApiService, DriverApiService>(client =>
+{
+    var apiBaseUrl = builder.Configuration.GetValue<string>("ApiSettings:BaseUrl") ?? "https://localhost:7001";
+    client.BaseAddress = new Uri(apiBaseUrl);
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
+});
+
+builder.Services.AddHttpClient<IIncidentApiService, IncidentApiService>(client =>
+{
+    var apiBaseUrl = builder.Configuration.GetValue<string>("ApiSettings:BaseUrl") ?? "https://localhost:7001";
+    client.BaseAddress = new Uri(apiBaseUrl);
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
+});
+
+builder.Services.AddHttpClient<IMaintenanceApiService, MaintenanceApiService>(client =>
+{
+    var apiBaseUrl = builder.Configuration.GetValue<string>("ApiSettings:BaseUrl") ?? "https://localhost:7001";
+    client.BaseAddress = new Uri(apiBaseUrl);
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
+});
+
+// Configuration de l'authentification par cookies pour le Web
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options =>
+    {
+        options.LoginPath = "/auth/login";
+        options.LogoutPath = "/auth/logout";
+        options.AccessDeniedPath = "/auth/access-denied";
+        options.ExpireTimeSpan = TimeSpan.FromMinutes(30);
+        options.SlidingExpiration = true;
+        options.Cookie.HttpOnly = true;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+        options.Cookie.SameSite = SameSiteMode.Lax;
+    });
 
 // Ajout des services
-builder.Services.AddRazorPages(options =>
-{
-    // Configuration autorisation par rôles selon TASK-002
-    options.Conventions.AuthorizeAreaFolder("Identity", "/Account/Manage");
-    options.Conventions.AuthorizeAreaPage("Identity", "/Account/Logout");
-});
+builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 
-// Configuration politiques d'autorisation selon TASK-002
+// Configuration politiques d'autorisation
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("AdminPolicy", policy =>
-        policy.RequireRole(UserRoles.Admin));
-    
+        policy.RequireRole("Admin"));
+
     options.AddPolicy("FleetManagerPolicy", policy =>
-        policy.RequireRole(UserRoles.Admin, UserRoles.FleetManager));
-    
+        policy.RequireRole("Admin", "FleetManager"));
+
     options.AddPolicy("DriverPolicy", policy =>
-        policy.RequireRole(UserRoles.Admin, UserRoles.FleetManager, UserRoles.Driver));
+        policy.RequireRole("Admin", "FleetManager", "Driver"));
 });
-
-// Configuration MediatR pour scanner l'assembly Application
-builder.Services.AddMediatR(cfg => {
-    cfg.RegisterServicesFromAssemblyContaining<Laroche.FleetManager.Application.Queries.Vehicles.GetVehiclesQuery>();
-});
-
-// Configuration des repositories
-builder.Services.AddScoped<Laroche.FleetManager.Application.Interfaces.IVehicleRepository, Laroche.FleetManager.Infrastructure.Repositories.VehicleRepository>();
-builder.Services.AddScoped<Laroche.FleetManager.Application.Interfaces.IDriverRepository, Laroche.FleetManager.Infrastructure.Repositories.DriverRepository>();
-
-// Configuration des services
-builder.Services.AddScoped<Laroche.FleetManager.Application.Interfaces.IAuthenticationService, Laroche.FleetManager.Infrastructure.Services.AuthenticationService>();
-builder.Services.AddScoped<Laroche.FleetManager.Application.Interfaces.ILoginAuditService, Laroche.FleetManager.Infrastructure.Services.LoginAuditService>();
-builder.Services.AddScoped<Laroche.FleetManager.Application.Interfaces.IUserService, Laroche.FleetManager.Infrastructure.Services.UserService>();
 
 var app = builder.Build();
-
-// Initialisation de la base de données
-try
-{
-    await app.Services.InitializeDatabaseAsync();
-    
-    // Initialisation des rôles et utilisateur admin TASK-002
-    await AuthenticationSeeder.SeedAsync(app.Services);
-}
-catch (Exception ex)
-{
-    var logger = app.Services.GetRequiredService<ILogger<Program>>();
-    logger.LogError(ex, "Une erreur s'est produite lors de l'initialisation de la base de données ou de l'authentification");
-    
-    if (app.Environment.IsDevelopment())
-    {
-        throw; // Re-lancer l'exception en développement
-    }
-}
 
 // Configuration des middlewares
 if (!app.Environment.IsDevelopment())
@@ -143,8 +101,8 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
 
-// Configuration middleware Identity selon TASK-002
-app.UseAuthentication(); // IMPORTANT: doit être avant UseAuthorization
+// Configuration middleware authentication
+app.UseAuthentication();
 app.UseAuthorization();
 
 // Configuration Blazor

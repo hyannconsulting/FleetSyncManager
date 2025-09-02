@@ -19,7 +19,7 @@ public interface IAuthenticationService
     /// <param name="ipAddress">Adresse IP de la requête</param>
     /// <param name="userAgent">User-Agent du navigateur</param>
     /// <returns>Résultat de l'authentification avec session de 30min</returns>
-    Task<AuthenticationResult> LoginAsync(string email, string password, bool rememberMe, 
+    Task<AuthenticationResult> LoginAsync(string email, string password, bool rememberMe,
         string ipAddress, string userAgent);
 
     /// <summary>
@@ -37,10 +37,11 @@ public interface IAuthenticationService
     /// <param name="password">Mot de passe respectant les politiques</param>
     /// <param name="firstName">Prénom</param>
     /// <param name="lastName">Nom</param>
+    /// <param name="telePhone"></param>
     /// <param name="role">Rôle: Admin, FleetManager ou Driver</param>
     /// <returns>Résultat de la création utilisateur</returns>
-    Task<CreateUserResult> CreateUserAsync(string email, string password, string firstName, 
-        string lastName, string role);
+    Task<CreateUserResult> CreateUserAsync(string email, string password, string firstName,
+        string lastName, string telePhone, string role);
 
     /// <summary>
     /// Démarre le processus de réinitialisation de mot de passe

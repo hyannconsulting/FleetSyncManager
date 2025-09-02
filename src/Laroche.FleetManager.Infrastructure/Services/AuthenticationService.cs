@@ -1,13 +1,11 @@
-using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using Microsoft.AspNetCore.Http;
 using Laroche.FleetManager.Application.Interfaces;
 using Laroche.FleetManager.Application.Models;
+using Laroche.FleetManager.Domain.Constants;
 using Laroche.FleetManager.Domain.Entities;
 using Laroche.FleetManager.Domain.Enums;
-using Laroche.FleetManager.Domain.Constants;
-using System.Security.Claims;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Logging;
 
 namespace Laroche.FleetManager.Infrastructure.Services;
 
@@ -40,12 +38,12 @@ public class AuthenticationService : IAuthenticationService
         _httpContextAccessor = httpContextAccessor ?? throw new ArgumentNullException(nameof(httpContextAccessor));
     }
 
-    public async Task<AuthenticationResult> LoginAsync(string email, string password, bool rememberMe, 
+    public async Task<AuthenticationResult> LoginAsync(string email, string password, bool rememberMe,
         string ipAddress, string userAgent)
     {
         if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
         {
-            await _loginAuditService.LogLoginAttemptAsync(null, email, LoginResult.InvalidCredentials, 
+            await _loginAuditService.LogLoginAttemptAsync(null, email, LoginResult.InvalidCredentials,
                 ipAddress, userAgent);
             return AuthenticationResult.Failure("Email et mot de passe requis");
         }
@@ -53,11 +51,11 @@ public class AuthenticationService : IAuthenticationService
         try
         {
             var user = await _userManager.FindByEmailAsync(email);
-            
+
             // Vérifier si utilisateur existe
             if (user == null)
             {
-                await _loginAuditService.LogLoginAttemptAsync(null, email, LoginResult.UserNotFound, 
+                await _loginAuditService.LogLoginAttemptAsync(null, email, LoginResult.UserNotFound,
                     ipAddress, userAgent);
                 return AuthenticationResult.Failure("Identifiants invalides");
             }
@@ -65,7 +63,7 @@ public class AuthenticationService : IAuthenticationService
             // Vérifier statut utilisateur
             if (user.Status != UserStatus.Active)
             {
-                await _loginAuditService.LogLoginAttemptAsync(user.Id, email, LoginResult.AccountDisabled, 
+                await _loginAuditService.LogLoginAttemptAsync(user.Id, email, LoginResult.AccountDisabled,
                     ipAddress, userAgent);
                 return AuthenticationResult.Failure("Compte désactivé");
             }
@@ -73,7 +71,7 @@ public class AuthenticationService : IAuthenticationService
             // Vérifier verrouillage
             if (await _userManager.IsLockedOutAsync(user))
             {
-                await _loginAuditService.LogLoginAttemptAsync(user.Id, email, LoginResult.AccountLocked, 
+                await _loginAuditService.LogLoginAttemptAsync(user.Id, email, LoginResult.AccountLocked,
                     ipAddress, userAgent);
                 return AuthenticationResult.Failure("Compte temporairement verrouillé");
             }
@@ -82,14 +80,14 @@ public class AuthenticationService : IAuthenticationService
             if (await _loginAuditService.HasExceededFailedAttemptsAsync(user.Id, TimeSpan.FromMinutes(15), 5))
             {
                 await _userManager.SetLockoutEndDateAsync(user, DateTimeOffset.UtcNow.AddMinutes(30));
-                await _loginAuditService.LogLoginAttemptAsync(user.Id, email, LoginResult.TooManyAttempts, 
+                await _loginAuditService.LogLoginAttemptAsync(user.Id, email, LoginResult.TooManyAttempts,
                     ipAddress, userAgent);
                 return AuthenticationResult.Failure("Trop de tentatives échouées. Compte verrouillé temporairement");
             }
 
             // Vérifier le mot de passe manuellement
             var passwordValid = await _userManager.CheckPasswordAsync(user, password);
-            
+
             if (passwordValid)
             {
                 // Tentative de connexion avec SignInManager seulement si HttpContext est disponible
@@ -119,12 +117,12 @@ public class AuthenticationService : IAuthenticationService
 
                 // Générer ID de session pour tracking
                 var sessionId = Guid.NewGuid().ToString();
-                
+
                 // Détecter activité suspecte
                 var isSuspicious = await _loginAuditService.DetectSuspiciousActivityAsync(user.Id, ipAddress);
-                
+
                 // Logger la connexion réussie
-                var loginAudit = await _loginAuditService.LogLoginAttemptAsync(user.Id, email, 
+                var loginAudit = await _loginAuditService.LogLoginAttemptAsync(user.Id, email,
                     LoginResult.Success, ipAddress, userAgent, sessionId);
 
                 if (isSuspicious)
@@ -133,32 +131,32 @@ public class AuthenticationService : IAuthenticationService
                 }
 
                 var userRoles = await _userManager.GetRolesAsync(user);
-                
+
                 _logger.LogInformation("Connexion réussie pour l'utilisateur {Email} depuis {IpAddress}", email, ipAddress);
 
-                return AuthenticationResult.Success(user.Id, sessionId, user.Email!, userRoles.ToList(), 
+                return AuthenticationResult.Success(user.Id, sessionId, user.Email!, userRoles.ToList(),
                     TimeSpan.FromMinutes(30)); // Session 30min selon TASK-002
             }
             else
             {
                 // Mot de passe invalide
                 user.FailedLoginAttempts++;
-                
+
                 // Vérifier si on doit verrouiller après cet échec
                 if (user.FailedLoginAttempts >= 5)
                 {
                     await _userManager.SetLockoutEndDateAsync(user, DateTimeOffset.UtcNow.AddMinutes(30));
                     await _userManager.UpdateAsync(user);
-                    
-                    await _loginAuditService.LogLoginAttemptAsync(user.Id, email, LoginResult.AccountLocked, 
+
+                    await _loginAuditService.LogLoginAttemptAsync(user.Id, email, LoginResult.AccountLocked,
                         ipAddress, userAgent);
                     return AuthenticationResult.Failure("Compte verrouillé suite à trop d'échecs");
                 }
                 else
                 {
                     await _userManager.UpdateAsync(user);
-                    
-                    await _loginAuditService.LogLoginAttemptAsync(user.Id, email, LoginResult.InvalidCredentials, 
+
+                    await _loginAuditService.LogLoginAttemptAsync(user.Id, email, LoginResult.InvalidCredentials,
                         ipAddress, userAgent);
                     return AuthenticationResult.Failure("Identifiants invalides");
                 }
@@ -188,12 +186,12 @@ public class AuthenticationService : IAuthenticationService
                     _logger.LogWarning("SignOutAsync échoué à cause de HttpContext null");
                 }
             }
-            
+
             if (!string.IsNullOrEmpty(sessionId))
             {
                 await _loginAuditService.LogSessionEndAsync(sessionId, "Logout");
             }
-            
+
             _logger.LogInformation("Déconnexion de l'utilisateur {UserId}", userId);
             return true;
         }
@@ -204,8 +202,8 @@ public class AuthenticationService : IAuthenticationService
         }
     }
 
-    public async Task<CreateUserResult> CreateUserAsync(string email, string password, string firstName, 
-        string lastName, string role)
+    public async Task<CreateUserResult> CreateUserAsync(string email, string password, string firstName,
+        string lastName, string telePhone, string role)
     {
         if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
         {
@@ -239,14 +237,14 @@ public class AuthenticationService : IAuthenticationService
             };
 
             var result = await _userManager.CreateAsync(user, password);
-            
+
             if (result.Succeeded)
             {
                 // Ajouter le rôle
                 await _userManager.AddToRoleAsync(user, role);
-                
+
                 _logger.LogInformation("Utilisateur créé avec succès: {Email} avec le rôle {Role}", email, role);
-                
+
                 return CreateUserResult.Success(user.Id, $"Utilisateur {email} créé avec le rôle {role}");
             }
             else
@@ -274,11 +272,11 @@ public class AuthenticationService : IAuthenticationService
             }
 
             var token = await _userManager.GeneratePasswordResetTokenAsync(user);
-            
+
             // TODO: Envoyer email avec token (intégration service email)
             // Pour l'instant, logger le token (développement uniquement)
             _logger.LogInformation("Token de réinitialisation généré pour {Email}: {Token}", email, token);
-            
+
             return true;
         }
         catch (Exception ex)
@@ -299,16 +297,16 @@ public class AuthenticationService : IAuthenticationService
             }
 
             var result = await _userManager.ResetPasswordAsync(user, token, newPassword);
-            
+
             if (result.Succeeded)
             {
                 user.MustChangePassword = false;
                 await _userManager.UpdateAsync(user);
-                
+
                 _logger.LogInformation("Mot de passe réinitialisé avec succès pour {Email}", email);
                 return true;
             }
-            
+
             return false;
         }
         catch (Exception ex)
@@ -329,16 +327,16 @@ public class AuthenticationService : IAuthenticationService
             }
 
             var result = await _userManager.ChangePasswordAsync(user, currentPassword, newPassword);
-            
+
             if (result.Succeeded)
             {
                 user.MustChangePassword = false;
                 await _userManager.UpdateAsync(user);
-                
+
                 _logger.LogInformation("Mot de passe changé avec succès pour l'utilisateur {UserId}", userId);
                 return true;
             }
-            
+
             return false;
         }
         catch (Exception ex)
@@ -360,10 +358,10 @@ public class AuthenticationService : IAuthenticationService
 
             var lockoutEndDate = lockoutEnd ?? DateTimeOffset.MaxValue; // Permanent si pas spécifié
             await _userManager.SetLockoutEndDateAsync(user, lockoutEndDate);
-            
+
             // Forcer déconnexion de toutes les sessions
             await _loginAuditService.ForceLogoutAllSessionsAsync(userId, "Account locked by admin");
-            
+
             _logger.LogInformation("Utilisateur {UserId} verrouillé jusqu'au {LockoutEnd}", userId, lockoutEndDate);
             return true;
         }
@@ -387,7 +385,7 @@ public class AuthenticationService : IAuthenticationService
             await _userManager.SetLockoutEndDateAsync(user, null);
             user.FailedLoginAttempts = 0; // Reset compteur
             await _userManager.UpdateAsync(user);
-            
+
             _logger.LogInformation("Utilisateur {UserId} déverrouillé", userId);
             return true;
         }
@@ -454,12 +452,12 @@ public class AuthenticationService : IAuthenticationService
             }
 
             var result = await _userManager.AddToRoleAsync(user, role);
-            
+
             if (result.Succeeded)
             {
                 _logger.LogInformation("Rôle {Role} ajouté à l'utilisateur {UserId}", role, userId);
             }
-            
+
             return result.Succeeded;
         }
         catch (Exception ex)
@@ -480,12 +478,12 @@ public class AuthenticationService : IAuthenticationService
             }
 
             var result = await _userManager.RemoveFromRoleAsync(user, role);
-            
+
             if (result.Succeeded)
             {
                 _logger.LogInformation("Rôle {Role} retiré de l'utilisateur {UserId}", role, userId);
             }
-            
+
             return result.Succeeded;
         }
         catch (Exception ex)

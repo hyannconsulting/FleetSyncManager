@@ -16,8 +16,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Laroche.FleetManager.Domain\Laroche.FleetManager.Domain.csproj" />
     <ProjectReference Include="..\Laroche.FleetManager.Application\Laroche.FleetManager.Application.csproj" />
-    <ProjectReference Include="..\Laroche.FleetManager.Infrastructure\Laroche.FleetManager.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

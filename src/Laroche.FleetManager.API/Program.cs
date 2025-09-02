@@ -48,6 +48,9 @@ try
     // Configuration API spécifique
     builder.Services.AddApiServices();
 
+    // Configuration des services d'authentification
+    builder.Services.AddAuthenticationServices(builder.Configuration);
+
     // Configuration CORS
     builder.Services.AddCors(options =>
     {

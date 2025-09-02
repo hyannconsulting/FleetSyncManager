@@ -12,6 +12,13 @@ public static class WebApplicationExtensions
     /// </summary>
     public static WebApplication ConfigureApiEndpoints(this WebApplication app)
     {
+        // Configuration middleware d'authentification
+        app.UseAuthentication();
+        app.UseAuthorization();
+
+        // Endpoints d'authentification
+        app.MapAuthEndpoints();
+
         // Configuration des endpoints par domaine métier
         app.ConfigureVehicleEndpoints();
         app.ConfigureDriverEndpoints();
