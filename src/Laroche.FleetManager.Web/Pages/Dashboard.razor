@@ -1,6 +1,5 @@
 @page "/dashboard"
 @using Microsoft.AspNetCore.Authorization
-@attribute [Authorize]
 @using MediatR
 @using Laroche.FleetManager.Application.Queries.Vehicles
 @using Laroche.FleetManager.Application.Queries.Drivers
@@ -8,6 +7,7 @@
 @using Laroche.FleetManager.Application.Queries.Incidents
 @using Laroche.FleetManager.Application.DTOs
 @inject IMediator Mediator
+@attribute [Authorize]
 
 <PageTitle>FleetSyncManager - Tableau de bord</PageTitle>
 

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Microsoft.AspNetCore.Http;
 using Laroche.FleetManager.Application.Interfaces;
 using Laroche.FleetManager.Application.Models;
 using Laroche.FleetManager.Domain.Entities;
@@ -21,19 +22,22 @@ public class AuthenticationService : IAuthenticationService
     private readonly RoleManager<IdentityRole> _roleManager;
     private readonly ILoginAuditService _loginAuditService;
     private readonly ILogger<AuthenticationService> _logger;
+    private readonly IHttpContextAccessor _httpContextAccessor;
 
     public AuthenticationService(
         UserManager<ApplicationUser> userManager,
         SignInManager<ApplicationUser> signInManager,
         RoleManager<IdentityRole> roleManager,
         ILoginAuditService loginAuditService,
-        ILogger<AuthenticationService> logger)
+        ILogger<AuthenticationService> logger,
+        IHttpContextAccessor httpContextAccessor)
     {
         _userManager = userManager ?? throw new ArgumentNullException(nameof(userManager));
         _signInManager = signInManager ?? throw new ArgumentNullException(nameof(signInManager));
         _roleManager = roleManager ?? throw new ArgumentNullException(nameof(roleManager));
         _loginAuditService = loginAuditService ?? throw new ArgumentNullException(nameof(loginAuditService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _httpContextAccessor = httpContextAccessor ?? throw new ArgumentNullException(nameof(httpContextAccessor));
     }
 
     public async Task<AuthenticationResult> LoginAsync(string email, string password, bool rememberMe, 
@@ -83,11 +87,30 @@ public class AuthenticationService : IAuthenticationService
                 return AuthenticationResult.Failure("Trop de tentatives échouées. Compte verrouillé temporairement");
             }
 
-            // Tentative de connexion avec Identity
-            var result = await _signInManager.PasswordSignInAsync(user, password, rememberMe, lockoutOnFailure: true);
+            // Vérifier le mot de passe manuellement
+            var passwordValid = await _userManager.CheckPasswordAsync(user, password);
             
-            if (result.Succeeded)
+            if (passwordValid)
             {
+                // Tentative de connexion avec SignInManager seulement si HttpContext est disponible
+                var httpContext = _httpContextAccessor.HttpContext;
+                if (httpContext != null)
+                {
+                    try
+                    {
+                        await _signInManager.SignInAsync(user, rememberMe);
+                    }
+                    catch (InvalidOperationException ex) when (ex.Message.Contains("HttpContext"))
+                    {
+                        // Si SignInManager échoue à cause du HttpContext, continuer sans lui
+                        _logger.LogWarning("SignInManager échoué à cause de HttpContext null, continuation sans cookie auth");
+                    }
+                }
+                else
+                {
+                    _logger.LogWarning("HttpContext non disponible, connexion sans cookie auth");
+                }
+
                 // Mise à jour des informations de connexion
                 user.LastLoginAt = DateTime.UtcNow;
                 user.LastLoginIp = ipAddress;
@@ -116,21 +139,29 @@ public class AuthenticationService : IAuthenticationService
                 return AuthenticationResult.Success(user.Id, sessionId, user.Email!, userRoles.ToList(), 
                     TimeSpan.FromMinutes(30)); // Session 30min selon TASK-002
             }
-            else if (result.IsLockedOut)
-            {
-                await _loginAuditService.LogLoginAttemptAsync(user.Id, email, LoginResult.AccountLocked, 
-                    ipAddress, userAgent);
-                return AuthenticationResult.Failure("Compte verrouillé suite à trop d'échecs");
-            }
             else
             {
-                // Incrémenter compteur d'échecs
+                // Mot de passe invalide
                 user.FailedLoginAttempts++;
-                await _userManager.UpdateAsync(user);
                 
-                await _loginAuditService.LogLoginAttemptAsync(user.Id, email, LoginResult.InvalidCredentials, 
-                    ipAddress, userAgent);
-                return AuthenticationResult.Failure("Identifiants invalides");
+                // Vérifier si on doit verrouiller après cet échec
+                if (user.FailedLoginAttempts >= 5)
+                {
+                    await _userManager.SetLockoutEndDateAsync(user, DateTimeOffset.UtcNow.AddMinutes(30));
+                    await _userManager.UpdateAsync(user);
+                    
+                    await _loginAuditService.LogLoginAttemptAsync(user.Id, email, LoginResult.AccountLocked, 
+                        ipAddress, userAgent);
+                    return AuthenticationResult.Failure("Compte verrouillé suite à trop d'échecs");
+                }
+                else
+                {
+                    await _userManager.UpdateAsync(user);
+                    
+                    await _loginAuditService.LogLoginAttemptAsync(user.Id, email, LoginResult.InvalidCredentials, 
+                        ipAddress, userAgent);
+                    return AuthenticationResult.Failure("Identifiants invalides");
+                }
             }
         }
         catch (Exception ex)
@@ -144,7 +175,19 @@ public class AuthenticationService : IAuthenticationService
     {
         try
         {
-            await _signInManager.SignOutAsync();
+            // Seulement utiliser SignInManager si HttpContext est disponible
+            var httpContext = _httpContextAccessor.HttpContext;
+            if (httpContext != null)
+            {
+                try
+                {
+                    await _signInManager.SignOutAsync();
+                }
+                catch (InvalidOperationException ex) when (ex.Message.Contains("HttpContext"))
+                {
+                    _logger.LogWarning("SignOutAsync échoué à cause de HttpContext null");
+                }
+            }
             
             if (!string.IsNullOrEmpty(sessionId))
             {

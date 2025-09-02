@@ -10,8 +10,16 @@
             <div class="d-flex align-items-center">
                 <h6 class="mb-0 text-muted me-3">FleetSyncManager</h6>
                 <div class="ms-auto">
-                    <!-- TODO: Add authentication display -->
-                    <span class="badge bg-success">Connecté</span>
+                    <AuthorizeView>
+                        <Authorized>
+                            <span class="text-light me-3">Bienvenue @context.User.Identity?.Name</span>
+                            <a href="/Account/Logout" class="btn btn-outline-light btn-sm">Se déconnecter</a>
+                        </Authorized>
+                        <NotAuthorized>
+                            <a href="/Account/Login" class="btn btn-outline-light btn-sm me-2">Se connecter</a>
+                            <a href="/Account/Register" class="btn btn-light btn-sm">S'inscrire</a>
+                        </NotAuthorized>
+                    </AuthorizeView>
                 </div>
             </div>
         </div>

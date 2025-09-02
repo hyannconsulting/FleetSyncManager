@@ -1,6 +1,38 @@
+@inject NavigationManager NavigationManager
+
 <Router AppAssembly="@typeof(App).Assembly">
     <Found Context="routeData">
-        <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
+        <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)">
+            <NotAuthorized>
+                @if (context.User.Identity?.IsAuthenticated == true)
+                {
+                    <LayoutView Layout="@typeof(MainLayout)">
+                        <div class="alert alert-danger text-center">
+                            <i class="fas fa-ban me-2"></i>
+                            Vous n'avez pas l'autorisation d'accéder à cette page.
+                        </div>
+                    </LayoutView>
+                }
+                else
+                {
+                    <LayoutView Layout="@typeof(MainLayout)">
+                        <div class="d-flex flex-column align-items-center justify-content-center" style="min-height: 60vh;">
+                            <div class="text-center">
+                                <i class="fas fa-lock fa-5x text-primary mb-4"></i>
+                                <h1 class="h3 mb-3">Authentification requise</h1>
+                                <p class="text-muted mb-4">
+                                    Vous devez être connecté pour accéder à cette page.
+                                </p>
+                                <a href="/Identity/Account/Login" class="btn btn-primary">
+                                    <i class="fas fa-sign-in-alt me-1"></i>
+                                    Se connecter
+                                </a>
+                            </div>
+                        </div>
+                    </LayoutView>
+                }
+            </NotAuthorized>
+        </AuthorizeRouteView>
     </Found>
     <NotFound>
         <PageTitle>Page non trouvée</PageTitle>

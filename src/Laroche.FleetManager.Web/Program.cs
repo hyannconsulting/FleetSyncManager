@@ -21,6 +21,9 @@ builder.Host.UseSerilog((context, configuration) =>
 // Configuration des services de base de données
 builder.Services.AddDatabaseServices(builder.Configuration);
 
+// Configuration IHttpContextAccessor pour accès au contexte HTTP
+builder.Services.AddHttpContextAccessor();
+
 // Configuration ASP.NET Core Identity selon TASK-002
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 {
