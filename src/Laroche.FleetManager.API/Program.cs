@@ -1,5 +1,6 @@
 using Laroche.FleetManager.API.Extensions;
 using Laroche.FleetManager.API.Middleware;
+using Laroche.FleetManager.Infrastructure.Services;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -20,9 +21,9 @@ try
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddSwaggerGen(c =>
     {
-        c.SwaggerDoc("v1", new() 
-        { 
-            Title = "FleetSyncManager API", 
+        c.SwaggerDoc("v1", new()
+        {
+            Title = "FleetSyncManager API",
             Version = "v1",
             Description = "API REST pour la gestion de flotte automobile",
             Contact = new()
@@ -31,7 +32,7 @@ try
                 Email = "support@fleetsynmanager.com"
             }
         });
-        
+
         // Documentation XML
         var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
         var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
@@ -69,6 +70,13 @@ try
 
     var app = builder.Build();
 
+
+    //await app.Services.InitializeDatabaseAsync();
+
+    // Initialisation des rôles et utilisateur admin TASK-002
+    await AuthenticationSeeder.SeedAsync(app.Services);
+
+
     // Configuration du pipeline
     if (app.Environment.IsDevelopment())
     {
@@ -82,10 +90,10 @@ try
 
     // Middleware personnalisé
     app.UseMiddleware<ExceptionHandlingMiddleware>();
-    
+
     app.UseHttpsRedirection();
     app.UseCors("AllowBlazorClient");
-    
+
     // Health Checks endpoints
     app.MapHealthChecks("/health");
 
@@ -93,7 +101,7 @@ try
     app.ConfigureApiEndpoints();
 
     Log.Information("✅ FleetSyncManager API configurée avec succès");
-    Log.Information("📖 Documentation Swagger disponible sur : {SwaggerUrl}", 
+    Log.Information("📖 Documentation Swagger disponible sur : {SwaggerUrl}",
         app.Environment.IsDevelopment() ? "https://localhost:7002" : "N/A");
 
     app.Run();

@@ -149,7 +149,7 @@ public static class AuthenticationSeeder
 
     private static async Task CreateDefaultFleetManagerAsync(UserManager<ApplicationUser> userManager, ILogger logger)
     {
-        const string adminEmail = "admin@fleetsyncmanager.com";
+        const string adminEmail = "FleetManager@fleetsyncmanager.com";
         const string adminPassword = "Admin123!@#";
 
         var existingAdmin = await userManager.FindByEmailAsync(adminEmail);
@@ -177,7 +177,7 @@ public static class AuthenticationSeeder
             }
             else
             {
-                logger.LogError("Erreur lors de la création de l'FleetManager administrateur: {Errors}",
+                logger.LogError("Erreur lors de la création de FleetManager administrateur: {Errors}",
                     string.Join(", ", result.Errors.Select(e => e.Description)));
             }
         }

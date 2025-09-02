@@ -1,16 +1,13 @@
-using Laroche.FleetManager.Infrastructure.Data;
-using Laroche.FleetManager.Domain.Entities;
 using Laroche.FleetManager.Application.Interfaces;
-using Laroche.FleetManager.Infrastructure.Services;
+using Laroche.FleetManager.Domain.Entities;
+using Laroche.FleetManager.Infrastructure.Data;
+using Laroche.FleetManager.Infrastructure.Extensions;
 using Laroche.FleetManager.Infrastructure.Repositories;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
+using Laroche.FleetManager.Infrastructure.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-using MediatR;
-using Laroche.FleetManager.Infrastructure.Extensions;
-using Laroche.FleetManager.API.Endpoints;
 
 namespace Laroche.FleetManager.API.Extensions;
 
@@ -22,7 +19,7 @@ public static class ServiceCollectionExtensions
     /// <summary>
     /// Configure les services d'authentification pour l'API
     /// </summary>
-    public static IServiceCollection AddAuthenticationServices(this IServiceCollection services, IConfiguration configuration)
+    public static async Task<IServiceCollection> AddAuthenticationServices(this IServiceCollection services, IConfiguration configuration)
     {
         // Configuration de la base de données
         services.AddDatabaseServices(configuration);
@@ -114,7 +111,8 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddApiServices(this IServiceCollection services)
     {
         // Configuration MediatR pour scanner l'assembly Application
-        services.AddMediatR(cfg => {
+        services.AddMediatR(cfg =>
+        {
             cfg.RegisterServicesFromAssemblyContaining<Laroche.FleetManager.Application.Queries.Vehicles.GetVehiclesQuery>();
         });
 
