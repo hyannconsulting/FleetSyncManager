@@ -198,6 +198,12 @@ public class AuthenticationService : IAuthenticationService
             {
                 try
                 {
+                    //var user = httpContext.User;
+                    //var userEmail = user?.Identity?.Name ?? "Unknown";
+                    //var ipAddress = httpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown";
+                    //var userAgent = httpContext.Request.Headers.UserAgent.ToString();
+
+                    //await _loginAuditService.LogLogoutAsync(LogLogoutAsync
                     await _signInManager.SignOutAsync();
                 }
                 catch (InvalidOperationException ex) when (ex.Message.Contains("HttpContext"))

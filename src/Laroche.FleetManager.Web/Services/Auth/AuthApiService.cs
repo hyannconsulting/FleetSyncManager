@@ -56,7 +56,7 @@ public class AuthApiService : IAuthApiService
                 if (loginResponse != null && !string.IsNullOrEmpty(loginResponse.Token))
                 {
                     // Stocker le token dans les cookies sécurisés
-                    await SetAuthenticationCookieAsync(loginResponse.Token, loginResponse.ExpiresAt);
+                    // await SetAuthenticationCookieAsync(loginResponse.Token, loginResponse.ExpiresAt);
 
                     return new LoginResult
                     {
@@ -200,7 +200,7 @@ public class AuthApiService : IAuthApiService
     {
         try
         {
-            var request = new { email = email };
+            var request = new { email };
             var json = JsonSerializer.Serialize(request, _jsonOptions);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
@@ -322,8 +322,10 @@ public class AuthApiService : IAuthApiService
     private class LoginApiResponse
     {
         public string Token { get; set; } = string.Empty;
+        public string? SessionId { get; set; }
         public string RefreshToken { get; set; } = string.Empty;
         public DateTime ExpiresAt { get; set; }
+        public TimeSpan? SessionDuration { get; set; }
     }
 
     private class UserInfoApiResponse

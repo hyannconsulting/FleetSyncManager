@@ -1,9 +1,9 @@
-@page "/Account/Logout"
+@page "/Identity/Account/Logout"
+@using Laroche.FleetManager.Web.Services.Auth
 @using Microsoft.AspNetCore.Identity
 @using Laroche.FleetManager.Domain.Entities
 @using Laroche.FleetManager.Application.Interfaces
-@inject SignInManager<ApplicationUser> SignInManager
-@inject ILoginAuditService AuditService
+@inject IAuthApiService AuthService
 @inject ILogger<Logout> Logger
 @inject NavigationManager NavigationManager
 
@@ -79,7 +79,7 @@
         // Si l'utilisateur n'est pas connecté, rediriger vers la page de connexion
         if (HttpContext.User?.Identity?.IsAuthenticated != true)
         {
-            NavigationManager.NavigateTo("/Account/Login", replace: true);
+            NavigationManager.NavigateTo("/Identity/Account/Login", replace: true);
             return;
         }
 
@@ -109,14 +109,14 @@
             // Logger la déconnexion
             Logger.LogInformation("Début de déconnexion pour l'utilisateur {Email} depuis {IpAddress}", userEmail, ipAddress);
 
-            // Enregistrer l'audit de déconnexion
-            if (user?.Identity?.IsAuthenticated == true)
-            {
-                await AuditService.LogLogoutAsync(userEmail, ipAddress, userAgent, true, "Déconnexion utilisateur");
-            }
+            // // Enregistrer l'audit de déconnexion
+            // if (user?.Identity?.IsAuthenticated == true)
+            // {
+            //     await .LogLogoutAsync(userEmail, ipAddress, userAgent, true, "Déconnexion utilisateur");
+            // }
 
             // Déconnexion via SignInManager
-            await SignInManager.SignOutAsync();
+            await AuthService.LogoutAsync();
 
             Logger.LogInformation("Déconnexion réussie pour l'utilisateur {Email}", userEmail);
 
@@ -128,7 +128,7 @@
             await Task.Delay(2000);
 
             // Rediriger vers la page de connexion
-            NavigationManager.NavigateTo("/Account/Login", replace: true);
+            NavigationManager.NavigateTo("/Identity/Account/Login", replace: true);
         }
         catch (Exception ex)
         {
@@ -136,7 +136,7 @@
             isLoggingOut = false;
             
             // En cas d'erreur, rediriger quand même vers la page de connexion
-            NavigationManager.NavigateTo("/Account/Login", replace: true);
+            NavigationManager.NavigateTo("/Identity/Account/Login", replace: true);
         }
     }
 }

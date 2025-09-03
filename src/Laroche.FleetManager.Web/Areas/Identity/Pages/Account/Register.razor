@@ -6,7 +6,7 @@
 @using Laroche.FleetManager.Domain.Entities
 @using Laroche.FleetManager.Application.DTOs.Users
 @using Laroche.FleetManager.Application.Interfaces
-@inject UserManager<ApplicationUser> UserManager
+
 @inject IUserService UserService
 @inject ILogger<Register> Logger
 @inject NavigationManager NavigationManager
@@ -246,7 +246,7 @@
                 await Task.Delay(2000);
                 
                 // Rediriger vers la page de connexion
-                NavigationManager.NavigateTo("/Account/Login?message=AccountCreated", replace: true);
+                NavigationManager.NavigateTo("/Identity/Account/Login?message=AccountCreated", replace: true);
             }
             else
             {

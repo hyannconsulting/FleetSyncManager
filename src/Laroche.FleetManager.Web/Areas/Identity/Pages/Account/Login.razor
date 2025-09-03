@@ -1,6 +1,5 @@
 @page "/Identity/Account/Login"
 @using Microsoft.AspNetCore.Authorization
-@using Laroche.FleetManager.Domain.Entities
 @using System.ComponentModel.DataAnnotations
 @using Laroche.FleetManager.Web.Services.Auth
 @inject IAuthApiService AuthService
@@ -159,7 +158,6 @@
             IsLoading = true;
             ErrorMessage = null;
             StateHasChanged();
-
 
             var result = await AuthService.LoginAsync(
                 LoginModel.Email,
