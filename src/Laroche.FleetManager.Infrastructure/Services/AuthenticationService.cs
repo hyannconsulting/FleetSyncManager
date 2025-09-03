@@ -21,14 +21,28 @@ public class AuthenticationService : IAuthenticationService
     private readonly ILoginAuditService _loginAuditService;
     private readonly ILogger<AuthenticationService> _logger;
     private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly ITokenProvider _tokenProvider;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="AuthenticationService"/> class, providing services for user
+    /// authentication, role management, and token generation.
+    /// </summary>
+    /// <param name="userManager">The <see cref="UserManager{TUser}"/> instance used to manage user accounts.</param>
+    /// <param name="signInManager">The <see cref="SignInManager{TUser}"/> instance used to handle user sign-in operations.</param>
+    /// <param name="roleManager">The <see cref="RoleManager{TRole}"/> instance used to manage user roles.</param>
+    /// <param name="loginAuditService">The service responsible for auditing login attempts and related activities.</param>
+    /// <param name="logger">The <see cref="ILogger{TCategoryName}"/> instance used for logging authentication-related events.</param>
+    /// <param name="httpContextAccessor">The <see cref="IHttpContextAccessor"/> instance used to access the current HTTP context.</param>
+    /// <param name="tokenProvider">The service responsible for generating and validating authentication tokens.</param>
+    /// <exception cref="ArgumentNullException">Thrown if any of the provided dependencies are <see langword="null"/>.</exception>
     public AuthenticationService(
         UserManager<ApplicationUser> userManager,
         SignInManager<ApplicationUser> signInManager,
         RoleManager<IdentityRole> roleManager,
         ILoginAuditService loginAuditService,
         ILogger<AuthenticationService> logger,
-        IHttpContextAccessor httpContextAccessor)
+        IHttpContextAccessor httpContextAccessor,
+        ITokenProvider tokenProvider)
     {
         _userManager = userManager ?? throw new ArgumentNullException(nameof(userManager));
         _signInManager = signInManager ?? throw new ArgumentNullException(nameof(signInManager));
@@ -36,6 +50,7 @@ public class AuthenticationService : IAuthenticationService
         _loginAuditService = loginAuditService ?? throw new ArgumentNullException(nameof(loginAuditService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _httpContextAccessor = httpContextAccessor ?? throw new ArgumentNullException(nameof(httpContextAccessor));
+        _tokenProvider = tokenProvider ?? throw new ArgumentNullException(nameof(tokenProvider));
     }
 
     public async Task<AuthenticationResult> LoginAsync(string email, string password, bool rememberMe,
@@ -134,10 +149,11 @@ public class AuthenticationService : IAuthenticationService
 
                 _logger.LogInformation("Connexion réussie pour l'utilisateur {Email} depuis {IpAddress}", email, ipAddress);
 
+                var loginUser = new Application.DTOs.Users.UserDto(user, userRoles);
+
                 return AuthenticationResult.Success(
-                    new Application.DTOs.Users.UserDto(user),
+                   _tokenProvider.CreateToken(loginUser),
                     sessionId,
-                    userRoles.ToList(),
                     TimeSpan.FromMinutes(30)); // Session 30min selon TASK-002
             }
             else

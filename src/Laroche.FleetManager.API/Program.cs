@@ -90,6 +90,7 @@ try
 
     // Middleware personnalisé
     app.UseMiddleware<ExceptionHandlingMiddleware>();
+    app.UseSerilogRequestLogging();
 
     app.UseHttpsRedirection();
     app.UseCors("AllowBlazorClient");

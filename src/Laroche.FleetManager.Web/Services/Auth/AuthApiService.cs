@@ -1,9 +1,9 @@
-using System.Net.Http.Headers;
-using System.Text;
-using System.Text.Json;
 using Laroche.FleetManager.Web.Models.Auth;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using System.Net.Http.Headers;
+using System.Text;
+using System.Text.Json;
 
 namespace Laroche.FleetManager.Web.Services.Auth;
 
@@ -25,7 +25,7 @@ public class AuthApiService : IAuthApiService
         _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
         _httpContextAccessor = httpContextAccessor ?? throw new ArgumentNullException(nameof(httpContextAccessor));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        
+
         _jsonOptions = new JsonSerializerOptions
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
@@ -39,8 +39,8 @@ public class AuthApiService : IAuthApiService
         {
             var loginRequest = new
             {
-                email = email,
-                password = password
+                email,
+                password
             };
 
             var json = JsonSerializer.Serialize(loginRequest, _jsonOptions);
@@ -52,12 +52,12 @@ public class AuthApiService : IAuthApiService
             if (response.IsSuccessStatusCode)
             {
                 var loginResponse = JsonSerializer.Deserialize<LoginApiResponse>(responseContent, _jsonOptions);
-                
+
                 if (loginResponse != null && !string.IsNullOrEmpty(loginResponse.Token))
                 {
                     // Stocker le token dans les cookies sécurisés
                     await SetAuthenticationCookieAsync(loginResponse.Token, loginResponse.ExpiresAt);
-                    
+
                     return new LoginResult
                     {
                         IsSuccess = true,
@@ -259,7 +259,7 @@ public class AuthApiService : IAuthApiService
 
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
             var response = await _httpClient.PostAsync("/api/v1/auth/change-password", content);
-            
+
             return response.IsSuccessStatusCode;
         }
         catch (Exception ex)
@@ -310,7 +310,7 @@ public class AuthApiService : IAuthApiService
             {
                 new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Name, "User"),
                 new System.Security.Claims.Claim("access_token", token)
-            }, 
+            },
             CookieAuthenticationDefaults.AuthenticationScheme);
 
         var principal = new System.Security.Claims.ClaimsPrincipal(identity);

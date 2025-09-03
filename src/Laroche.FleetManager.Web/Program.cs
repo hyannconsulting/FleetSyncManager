@@ -1,3 +1,4 @@
+using Laroche.FleetManager.Application.Interfaces;
 using Laroche.FleetManager.Web.Services;
 using Laroche.FleetManager.Web.Services.Auth;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -10,6 +11,7 @@ builder.Host.UseSerilog((context, configuration) =>
 {
     configuration.ReadFrom.Configuration(context.Configuration);
 });
+
 
 // Configuration IHttpContextAccessor pour accès au contexte HTTP
 builder.Services.AddHttpContextAccessor();

@@ -16,7 +16,8 @@ public class UserDto
     /// Initialise une nouvelle instance de la classe <see cref="UserDto"/> à partir d'un <see cref="ApplicationUser"/>.
     /// </summary>
     /// <param name="user">L'utilisateur source.</param>
-    public UserDto(ApplicationUser user)
+    /// <param name="userRoles"></param>
+    public UserDto(ApplicationUser user, IList<string> userRoles)
     {
         Id = user.Id;
         Email = user.Email ?? string.Empty;
@@ -34,6 +35,7 @@ public class UserDto
         UpdatedAt = user.UpdatedAt;
         LastLoginAt = user.LastLoginAt;
         IsActive = user.IsActive;
+        Roles = [.. userRoles];
         // IsOnline et Roles doivent être définis ailleurs selon la logique métier
     }
     /// <summary>

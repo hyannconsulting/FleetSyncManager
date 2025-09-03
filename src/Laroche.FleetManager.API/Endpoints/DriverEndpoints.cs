@@ -22,7 +22,9 @@ public static class DriverEndpoints
         .WithName("GetDrivers")
         .WithSummary("Récupère la liste des conducteurs")
         .WithDescription("Endpoint de test - retourne un message de confirmation")
-        .Produces<object>(StatusCodes.Status200OK);
+        .Produces<object>(StatusCodes.Status200OK)
+        // .RequireAuthorization()
+        ;
 
         return app;
     }

@@ -102,6 +102,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IVehicleRepository, VehicleRepository>();
         services.AddScoped<IDriverRepository, DriverRepository>();
 
+        services.AddSingleton<ITokenProvider, TokenProvider>();
+
         return services;
     }
 

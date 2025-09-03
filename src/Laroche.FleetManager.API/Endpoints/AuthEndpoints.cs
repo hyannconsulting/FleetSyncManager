@@ -1,4 +1,3 @@
-using Laroche.FleetManager.Application.DTOs.Users;
 using Laroche.FleetManager.Application.Interfaces;
 using System.Security.Claims;
 
@@ -43,10 +42,9 @@ public static class AuthEndpoints
                     {
                         Success = true,
                         Message = "Connexion réussie",
-                        User = result.User,
+                        Token = result.Token,
                         SessionId = result.SessionId,
                         SessionDuration = result.SessionDuration,
-                        UserRoles = result.UserRoles
                     });
                 }
 
@@ -326,10 +324,10 @@ public record LoginResponse
 {
     public bool Success { get; set; }
     public string Message { get; set; } = string.Empty;
-    public UserDto? User { get; set; }
+    public string Token { get; set; } = string.Empty;
     public string? SessionId { get; set; }
     public TimeSpan? SessionDuration { get; set; }
-    public List<string> UserRoles { get; set; } = new();
+
 }
 
 public record RegisterRequest(
