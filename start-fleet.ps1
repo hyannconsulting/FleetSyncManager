@@ -2,6 +2,7 @@
 Write-Host "🚀 Démarrage de FleetSyncManager" -ForegroundColor Green
 Write-Host "=================================" -ForegroundColor Green
 
+
 $rootPath = $PSScriptRoot
 $apiPath = Join-Path $rootPath "src\Laroche.FleetManager.API"
 $webPath = Join-Path $rootPath "src\Laroche.FleetManager.Web"
@@ -44,6 +45,9 @@ function Start-BackgroundProcess {
 }
 
 try {
+
+    Get-Process | Where-Object { $_.ProcessName -like "*FleetManager*" } | Stop-Process -Force
+
     Write-Host ""
     Write-Host "🌐 Lancement de l'API (Port 7002)..." -ForegroundColor Magenta
     $apiProcess = Start-BackgroundProcess -Title "FleetSyncManager API" -WorkingDirectory $apiPath -Command "dotnet" -Arguments "run --urls https://localhost:7002"

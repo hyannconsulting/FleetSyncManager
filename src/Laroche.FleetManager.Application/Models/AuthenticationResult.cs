@@ -1,4 +1,4 @@
-using Laroche.FleetManager.Domain.Entities;
+using Laroche.FleetManager.Application.DTOs.Users;
 using Laroche.FleetManager.Domain.Enums;
 
 namespace Laroche.FleetManager.Application.Models;
@@ -11,24 +11,26 @@ public class AuthenticationResult
     public bool IsSuccess { get; set; }
     public LoginResult Result { get; set; }
     public string Message { get; set; } = string.Empty;
-    public ApplicationUser? User { get; set; }
+    public UserDto? User { get; set; }
     public string? SessionId { get; set; }
     public TimeSpan? SessionDuration { get; set; }
     public List<string> UserRoles { get; set; } = new();
-    public string? UserId { get; set; }
+    //public string? UserId { get; set; }
 
     /// <summary>
     /// Crée un résultat de succès
     /// </summary>
-    public static AuthenticationResult Success(string userId, string sessionId, string userEmail, 
-        List<string> roles, TimeSpan sessionDuration)
+    public static AuthenticationResult Success(UserDto? user,
+        string sessionId,
+        List<string> roles,
+        TimeSpan sessionDuration)
     {
         return new AuthenticationResult
         {
             IsSuccess = true,
             Result = LoginResult.Success,
             Message = "Connexion réussie",
-            UserId = userId,
+            User = user,
             SessionId = sessionId,
             UserRoles = roles,
             SessionDuration = sessionDuration

@@ -1,3 +1,4 @@
+using Laroche.FleetManager.Application.DTOs.Users;
 using Laroche.FleetManager.Application.Interfaces;
 using System.Security.Claims;
 
@@ -325,7 +326,7 @@ public record LoginResponse
 {
     public bool Success { get; set; }
     public string Message { get; set; } = string.Empty;
-    public object? User { get; set; }
+    public UserDto? User { get; set; }
     public string? SessionId { get; set; }
     public TimeSpan? SessionDuration { get; set; }
     public List<string> UserRoles { get; set; } = new();

@@ -1,10 +1,10 @@
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using Laroche.FleetManager.Application.Common;
 using Laroche.FleetManager.Application.DTOs.Users;
 using Laroche.FleetManager.Application.Interfaces;
 using Laroche.FleetManager.Domain.Entities;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace Laroche.FleetManager.Infrastructure.Services;
 
@@ -61,7 +61,7 @@ public class UserService : IUserService
             };
 
             var result = await _userManager.CreateAsync(user, createUserDto.Password);
-            
+
             if (result.Succeeded)
             {
                 // Assigner le rôle
@@ -136,7 +136,7 @@ public class UserService : IUserService
                 return null;
 
             var roles = await _userManager.GetRolesAsync(user);
-            
+
             return new UserDto
             {
                 Id = user.Id,
@@ -175,7 +175,7 @@ public class UserService : IUserService
                 return null;
 
             var roles = await _userManager.GetRolesAsync(user);
-            
+
             return new UserDto
             {
                 Id = user.Id,
@@ -214,7 +214,7 @@ public class UserService : IUserService
             // Filtre de recherche
             if (!string.IsNullOrEmpty(searchTerm))
             {
-                query = query.Where(u => 
+                query = query.Where(u =>
                     u.Email!.Contains(searchTerm) ||
                     u.FirstName.Contains(searchTerm) ||
                     u.LastName.Contains(searchTerm));
@@ -233,7 +233,7 @@ public class UserService : IUserService
             foreach (var user in users)
             {
                 var roles = await _userManager.GetRolesAsync(user);
-                
+
                 // Filtre par rôle si spécifié
                 if (!string.IsNullOrEmpty(role) && !roles.Contains(role))
                     continue;
@@ -271,7 +271,7 @@ public class UserService : IUserService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Erreur lors de la récupération des utilisateurs");
-            return new PagedResult<UserDto> { Items = new List<UserDto>(), TotalCount = 0, Page = page, PageSize = pageSize };
+            return new PagedResult<UserDto> { Items = [], TotalCount = 0, Page = page, PageSize = pageSize };
         }
     }
 

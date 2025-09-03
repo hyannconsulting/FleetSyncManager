@@ -1,10 +1,9 @@
 @page "/Identity/Account/Login"
 @using Microsoft.AspNetCore.Authorization
-@using Laroche.FleetManager.Application.Interfaces
 @using Laroche.FleetManager.Domain.Entities
 @using System.ComponentModel.DataAnnotations
-@inject IAuthenticationService AuthenticationService
-@inject ILoginAuditService LoginAuditService
+@using Laroche.FleetManager.Web.Services.Auth
+@inject IAuthApiService AuthService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 @attribute [AllowAnonymous]
@@ -161,12 +160,10 @@
             ErrorMessage = null;
             StateHasChanged();
 
-            var result = await AuthenticationService.LoginAsync(
+
+            var result = await AuthService.LoginAsync(
                 LoginModel.Email,
-                LoginModel.Password,
-                LoginModel.RememberMe,
-                GetClientIpAddress(),
-                GetUserAgent()
+                LoginModel.Password
             );
 
             if (result.IsSuccess)
@@ -176,7 +173,9 @@
             }
             else
             {
-                ErrorMessage = result.Message ?? "Erreur de connexion. Vérifiez vos identifiants.";
+                ErrorMessage = (result.Errors != null && result.Errors.Any())
+                    ? result.Errors.FirstOrDefault()
+                    : "Erreur de connexion. Vérifiez vos identifiants.";
             }
         }
         catch (Exception ex)

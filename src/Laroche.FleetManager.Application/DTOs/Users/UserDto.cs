@@ -1,3 +1,5 @@
+using Laroche.FleetManager.Domain.Entities;
+
 namespace Laroche.FleetManager.Application.DTOs.Users;
 
 /// <summary>
@@ -5,6 +7,35 @@ namespace Laroche.FleetManager.Application.DTOs.Users;
 /// </summary>
 public class UserDto
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="UserDto"/> class.
+    /// </summary>
+    public UserDto() { }
+
+    /// <summary>
+    /// Initialise une nouvelle instance de la classe <see cref="UserDto"/> à partir d'un <see cref="ApplicationUser"/>.
+    /// </summary>
+    /// <param name="user">L'utilisateur source.</param>
+    public UserDto(ApplicationUser user)
+    {
+        Id = user.Id;
+        Email = user.Email ?? string.Empty;
+        UserName = user.UserName ?? string.Empty;
+        FirstName = user.FirstName ?? string.Empty;
+        LastName = user.LastName ?? string.Empty;
+        PhoneNumber = user.PhoneNumber;
+        PhoneNumberConfirmed = user.PhoneNumberConfirmed;
+        EmailConfirmed = user.EmailConfirmed;
+        TwoFactorEnabled = user.TwoFactorEnabled;
+        LockoutEnd = user.LockoutEnd;
+        LockoutEnabled = user.LockoutEnabled;
+        AccessFailedCount = user.AccessFailedCount;
+        CreatedAt = user.CreatedAt;
+        UpdatedAt = user.UpdatedAt;
+        LastLoginAt = user.LastLoginAt;
+        IsActive = user.IsActive;
+        // IsOnline et Roles doivent être définis ailleurs selon la logique métier
+    }
     /// <summary>
     /// Identifiant unique de l'utilisateur
     /// </summary>

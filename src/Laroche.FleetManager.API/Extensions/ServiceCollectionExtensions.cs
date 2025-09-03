@@ -65,7 +65,7 @@ public static class ServiceCollectionExtensions
         })
         .AddJwtBearer(options =>
         {
-            options.RequireHttpsMetadata = false; // En production, mettre à true
+            options.RequireHttpsMetadata = true; // En production, mettre à true
             options.SaveToken = true;
             options.TokenValidationParameters = new TokenValidationParameters
             {

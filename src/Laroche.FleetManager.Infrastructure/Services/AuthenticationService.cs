@@ -118,23 +118,26 @@ public class AuthenticationService : IAuthenticationService
                 // Générer ID de session pour tracking
                 var sessionId = Guid.NewGuid().ToString();
 
-                // Détecter activité suspecte
-                var isSuspicious = await _loginAuditService.DetectSuspiciousActivityAsync(user.Id, ipAddress);
+                //// Détecter activité suspecte
+                //var isSuspicious = await _loginAuditService.DetectSuspiciousActivityAsync(user.Id, ipAddress);
 
                 // Logger la connexion réussie
                 var loginAudit = await _loginAuditService.LogLoginAttemptAsync(user.Id, email,
                     LoginResult.Success, ipAddress, userAgent, sessionId);
 
-                if (isSuspicious)
-                {
-                    await _loginAuditService.MarkAsSuspiciousAsync(loginAudit.Id, "Connexion depuis nouvelle IP ou comportement inhabituel");
-                }
+                //if (isSuspicious)
+                //{
+                //    await _loginAuditService.MarkAsSuspiciousAsync(loginAudit.Id, "Connexion depuis nouvelle IP ou comportement inhabituel");
+                //}
 
                 var userRoles = await _userManager.GetRolesAsync(user);
 
                 _logger.LogInformation("Connexion réussie pour l'utilisateur {Email} depuis {IpAddress}", email, ipAddress);
 
-                return AuthenticationResult.Success(user.Id, sessionId, user.Email!, userRoles.ToList(),
+                return AuthenticationResult.Success(
+                    new Application.DTOs.Users.UserDto(user),
+                    sessionId,
+                    userRoles.ToList(),
                     TimeSpan.FromMinutes(30)); // Session 30min selon TASK-002
             }
             else
