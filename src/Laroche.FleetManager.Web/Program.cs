@@ -1,4 +1,3 @@
-using Laroche.FleetManager.Application.Interfaces;
 using Laroche.FleetManager.Web.Services;
 using Laroche.FleetManager.Web.Services.Auth;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -58,8 +57,8 @@ builder.Services.AddHttpClient<IMaintenanceApiService, MaintenanceApiService>(cl
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
-        options.LoginPath = "/auth/login";
-        options.LogoutPath = "/auth/logout";
+        options.LoginPath = "/Identity/Account/Login";
+        options.LogoutPath = "/Identity/Account/logout";
         options.AccessDeniedPath = "/auth/access-denied";
         options.ExpireTimeSpan = TimeSpan.FromMinutes(30);
         options.SlidingExpiration = true;

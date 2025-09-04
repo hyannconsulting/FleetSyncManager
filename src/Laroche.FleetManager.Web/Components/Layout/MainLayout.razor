@@ -13,11 +13,11 @@
                     <AuthorizeView>
                         <Authorized>
                             <span class="text-light me-3">Bienvenue @context.User.Identity?.Name</span>
-                            <a href="/Account/Logout" class="btn btn-outline-light btn-sm">Se déconnecter</a>
+                            <a href="/Identity/Account/Logout" class="btn btn-outline-light btn-sm">Se déconnecter</a>
                         </Authorized>
                         <NotAuthorized>
-                            <a href="/Account/Login" class="btn btn-outline-light btn-sm me-2">Se connecter</a>
-                            <a href="/Account/Register" class="btn btn-light btn-sm">S'inscrire</a>
+                            <a href="/Identity/Account/Login" class="btn btn-outline-light btn-sm me-2">Se connecter</a>
+                            <a href="/Identity/Account/Register" class="btn btn-light btn-sm">S'inscrire</a>
                         </NotAuthorized>
                     </AuthorizeView>
                 </div>

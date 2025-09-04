@@ -10,10 +10,10 @@ public class LoginModel
     [Required(ErrorMessage = "L'adresse e-mail est obligatoire")]
     [EmailAddress(ErrorMessage = "Format d'adresse e-mail invalide")]
     public string Email { get; set; } = string.Empty;
-    
+
     [Required(ErrorMessage = "Le mot de passe est obligatoire")]
     public string Password { get; set; } = string.Empty;
-    
+
     public bool RememberMe { get; set; }
 }
 
@@ -69,6 +69,8 @@ public class LoginResult
     public string? RefreshToken { get; set; }
     public DateTime? ExpiresAt { get; set; }
     public List<string> Errors { get; set; } = new List<string>();
+    public TimeSpan? SessionDuration { get; set; }
+    public string? SessionID { get; set; }
 }
 
 /// <summary>

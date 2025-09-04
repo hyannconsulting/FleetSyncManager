@@ -62,7 +62,10 @@ public class AuthApiService : IAuthApiService
                     {
                         IsSuccess = true,
                         Token = loginResponse.Token,
-                        ExpiresAt = loginResponse.ExpiresAt
+                        ExpiresAt = loginResponse.ExpiresAt,
+                        SessionDuration = loginResponse.SessionDuration,
+                        SessionID = loginResponse.SessionId,
+                        RefreshToken = loginResponse.RefreshToken
                     };
                 }
             }
@@ -250,8 +253,8 @@ public class AuthApiService : IAuthApiService
 
             var request = new
             {
-                currentPassword = currentPassword,
-                newPassword = newPassword
+                currentPassword,
+                newPassword
             };
 
             var json = JsonSerializer.Serialize(request, _jsonOptions);

@@ -4,6 +4,7 @@
 @using Laroche.FleetManager.Web.Services.Auth
 @inject IAuthApiService AuthService
 @inject NavigationManager Navigation
+@inject IHttpContextAccessor HttpContextAccessor
 @inject IJSRuntime JSRuntime
 @attribute [AllowAnonymous]
 
@@ -140,7 +141,7 @@
 @code {
     [SupplyParameterFromForm]
     public LoginFormModel LoginModel { get; set; } = new();
-    
+
     public bool IsLoading { get; set; } = false;
     public bool ShowPassword { get; set; } = false;
     public string? ErrorMessage { get; set; }
@@ -166,8 +167,11 @@
 
             if (result.IsSuccess)
             {
+                await SetAuthenticationCookieAsync(result.Token!, result.ExpiresAt!.Value, result.SessionID!,
+                result.SessionDuration!.Value);
+
                 // Redirection après connexion réussie
-                Navigation.NavigateTo("/", true);
+                Navigation.NavigateTo("/accueil", true);
             }
             else
             {
@@ -203,6 +207,25 @@
     {
         // En développement, retourner un User-Agent fictif
         return "FleetSyncManager/1.0";
+    }
+
+    private async Task SetAuthenticationCookieAsync(string token, DateTime expiresAt, string sessionId, TimeSpan sessionDuration)
+    {
+        try
+        {
+                var sessionExpiresAt = DateTimeOffset.UtcNow.Add(sessionDuration);
+                await JSRuntime.InvokeVoidAsync("localStorage.setItem", "access_token", token);
+                await JSRuntime.InvokeVoidAsync("localStorage.setItem", "access_token_expires", sessionExpiresAt.ToString("O"));
+           
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erreur lors de la définition du cookie d'authentification: {ex.Message}");
+            // Fallback vers localStorage
+            var fallbackExpiresAt = DateTime.UtcNow.AddMinutes(30);
+            await JSRuntime.InvokeVoidAsync("localStorage.setItem", "access_token", token);
+            await JSRuntime.InvokeVoidAsync("localStorage.setItem", "access_token_expires", fallbackExpiresAt.ToString("O"));
+        }
     }
 
     public class LoginFormModel
