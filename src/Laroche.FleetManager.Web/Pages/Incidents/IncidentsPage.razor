@@ -1,14 +1,14 @@
 @page "/incidents"
+@using Laroche.FleetManager.Application.Queries.Incidents
 @using Microsoft.AspNetCore.Authorization
 @attribute [Authorize]
 @using System.ComponentModel.DataAnnotations
 @using Microsoft.AspNetCore.Components.Forms
-@using MediatR
-@using Laroche.FleetManager.Application.Queries.Incidents
-@using Laroche.FleetManager.Application.Commands.Incidents
+
+@using Laroche.FleetManager.Web.Services.Interfaces
 @using Laroche.FleetManager.Application.DTOs
 @using Laroche.FleetManager.Application.Common
-@inject IMediator Mediator
+
 @inject IJSRuntime JSRuntime
 
 <PageTitle>Incidents</PageTitle>
@@ -278,6 +278,8 @@
 }
 
 @code {
+    [Inject] private IIncidentApiService IncidentApiService { get; set; } = default!;
+
     private PagedResult<IncidentDto>? pagedResult;
     private bool isLoading = true;
     private bool isSaving = false;
@@ -325,22 +327,23 @@
     {
         isLoading = true;
         currentPage = page;
-        
+        var query = new GetAllIncidentsQuery
+        {
+            Page = currentPage,
+            PageSize = pageSize,
+            DriverId = null,
+            VehicleId = null,
+            Status = null,
+            Severity = null,
+            FromDate = null,
+            ToDate = null,
+            SearchTerm = null
+        };
+
         try
         {
-            var query = new GetAllIncidentsQuery
-            {
-                Page = currentPage,
-                PageSize = pageSize
-            };
-            
-            var result = await Mediator.Send(query);
-            
-            if (result.IsSuccess && result.Value != null)
-            {
-                pagedResult = result.Value;
-            }
-            else
+            pagedResult = await IncidentApiService.GetPagedAsync(query);
+            if (pagedResult == null || pagedResult.Items == null)
             {
                 await JSRuntime.InvokeVoidAsync("alert", "Erreur lors du chargement des incidents");
             }
@@ -395,13 +398,13 @@
     {
         isSaving = true;
         StateHasChanged();
-        
+
         try
         {
             if (editingIncident == null)
             {
                 // Création
-                var command = new CreateIncidentCommand
+                var createCommand = new CreateIncidentCommand
                 {
                     VehicleId = incidentForm.VehicleId,
                     DriverId = incidentForm.DriverId,
@@ -416,10 +419,10 @@
                     InvestigatedBy = incidentForm.InvestigatedBy,
                     InvestigationNotes = incidentForm.InvestigationNotes
                 };
-                
-                var result = await Mediator.Send(command);
-                
-                if (result.IsSuccess)
+
+                var createdIncident = await IncidentApiService.CreateAsync(createCommand);
+
+                if (createdIncident != null && createdIncident.Id > 0)
                 {
                     await JSRuntime.InvokeVoidAsync("alert", "Incident créé avec succès");
                     CloseModal();
@@ -433,7 +436,7 @@
             else
             {
                 // Modification
-                var command = new UpdateIncidentCommand
+                var updateCommand = new UpdateIncidentCommand
                 {
                     Id = editingIncident.Id,
                     VehicleId = incidentForm.VehicleId,
@@ -449,10 +452,10 @@
                     InvestigatedBy = incidentForm.InvestigatedBy,
                     InvestigationNotes = incidentForm.InvestigationNotes
                 };
-                
-                var result = await Mediator.Send(command);
-                
-                if (result.IsSuccess)
+
+                var updatedIncident = await IncidentApiService.UpdateAsync(editingIncident.Id, updateCommand);
+
+                if (updatedIncident != null && updatedIncident.Id > 0)
                 {
                     await JSRuntime.InvokeVoidAsync("alert", "Incident modifié avec succès");
                     CloseModal();
@@ -481,10 +484,8 @@
         {
             try
             {
-                var command = new ResolveIncidentCommand(id);
-                var result = await Mediator.Send(command);
-                
-                if (result.IsSuccess)
+                var resolved = await IncidentApiService.MarkAsResolvedAsync(id);
+                if (resolved)
                 {
                     await JSRuntime.InvokeVoidAsync("alert", "Incident marqué comme résolu");
                     await LoadIncidents(currentPage);
@@ -507,10 +508,8 @@
         {
             try
             {
-                var command = new DeleteIncidentCommand(id);
-                var result = await Mediator.Send(command);
-                
-                if (result.IsSuccess)
+                var result = await IncidentApiService.DeleteAsync(id);
+                if (result)
                 {
                     await JSRuntime.InvokeVoidAsync("alert", "Incident supprimé avec succès");
                     await LoadIncidents(currentPage);

@@ -73,6 +73,8 @@ public class CreateDriverCommand : IRequest<Result<DriverDto>>
     /// Gets or sets the notes or additional information associated with the object.
     /// </summary>
     public string? Notes { get; set; }
+
+    public string Status { get; set; } = "";
 }
 
 /// <summary>
@@ -139,6 +141,9 @@ public class UpdateDriverCommand : IRequest<Result<DriverDto>>
     /// Driver status
     /// </summary>
     public string Status { get; set; } = "Active";
+
+    public DateTime DateOfBirth { get; set; }
+    public DateTime? HireDate { get; set; }
 }
 
 /// <summary>

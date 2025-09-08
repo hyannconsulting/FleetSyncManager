@@ -3,12 +3,10 @@
 @attribute [Authorize]
 @using System.ComponentModel.DataAnnotations
 @using Microsoft.AspNetCore.Components.Forms
-@using MediatR
-@using Laroche.FleetManager.Application.Queries.Maintenances
-@using Laroche.FleetManager.Application.Commands.Maintenances
+@using Laroche.FleetManager.Web.Services.Interfaces
 @using Laroche.FleetManager.Application.DTOs
 @using Laroche.FleetManager.Application.Common
-@inject IMediator Mediator
+
 @inject IJSRuntime JSRuntime
 
 <PageTitle>Maintenances</PageTitle>
@@ -282,6 +280,8 @@
 }
 
 @code {
+    [Inject] private IMaintenanceApiService MaintenanceApiService { get; set; } = default!;
+
     private PagedResult<MaintenanceDto>? pagedResult;
     private bool isLoading = true;
     private bool isSaving = false;
@@ -324,22 +324,11 @@
     {
         isLoading = true;
         currentPage = page;
-        
+
         try
         {
-            var query = new GetAllMaintenancesQuery
-            {
-                Page = currentPage,
-                PageSize = pageSize
-            };
-            
-            var result = await Mediator.Send(query);
-            
-            if (result.IsSuccess && result.Value != null)
-            {
-                pagedResult = result.Value;
-            }
-            else
+            pagedResult = await MaintenanceApiService.GetPagedAsync(currentPage, pageSize);
+            if (pagedResult == null || pagedResult.Items == null)
             {
                 await JSRuntime.InvokeVoidAsync("alert", "Erreur lors du chargement des maintenances");
             }
@@ -393,13 +382,13 @@
     {
         isSaving = true;
         StateHasChanged();
-        
+
         try
         {
             if (editingMaintenance == null)
             {
                 // Création
-                var command = new CreateMaintenanceCommand
+                var createCommand = new CreateMaintenanceCommand
                 {
                     VehicleId = maintenanceForm.VehicleId,
                     MaintenanceType = maintenanceForm.MaintenanceType,
@@ -413,10 +402,10 @@
                     Description = maintenanceForm.Description ?? string.Empty,
                     Notes = maintenanceForm.Notes
                 };
-                
-                var result = await Mediator.Send(command);
-                
-                if (result.IsSuccess)
+
+                var result = await MaintenanceApiService.CreateAsync(createCommand);
+
+                if (result != null && result.IsCompleted)
                 {
                     await JSRuntime.InvokeVoidAsync("alert", "Maintenance créée avec succès");
                     CloseModal();
@@ -430,7 +419,7 @@
             else
             {
                 // Modification
-                var command = new UpdateMaintenanceCommand
+                var updateCommand = new UpdateMaintenanceCommand
                 {
                     Id = editingMaintenance.Id,
                     VehicleId = maintenanceForm.VehicleId,
@@ -445,10 +434,10 @@
                     Description = maintenanceForm.Description ?? string.Empty,
                     Notes = maintenanceForm.Notes
                 };
-                
-                var result = await Mediator.Send(command);
-                
-                if (result.IsSuccess)
+
+                var result = await MaintenanceApiService.UpdateAsync(editingMaintenance.Id, updateCommand);
+
+                if (result != null && result.IsCompleted)
                 {
                     await JSRuntime.InvokeVoidAsync("alert", "Maintenance modifiée avec succès");
                     CloseModal();
@@ -477,10 +466,8 @@
         {
             try
             {
-                var command = new CompleteMaintenanceCommand(id);
-                var result = await Mediator.Send(command);
-                
-                if (result.IsSuccess)
+                var result = await MaintenanceApiService.CompleteMaintenanceAsync(id,DateTime.UtcNow,0);
+                if (result)
                 {
                     await JSRuntime.InvokeVoidAsync("alert", "Maintenance marquée comme terminée");
                     await LoadMaintenances(currentPage);
@@ -503,10 +490,8 @@
         {
             try
             {
-                var command = new DeleteMaintenanceCommand(id);
-                var result = await Mediator.Send(command);
-                
-                if (result.IsSuccess)
+                var result = await MaintenanceApiService.DeleteAsync(id);
+                if (result)
                 {
                     await JSRuntime.InvokeVoidAsync("alert", "Maintenance supprimée avec succès");
                     await LoadMaintenances(currentPage);

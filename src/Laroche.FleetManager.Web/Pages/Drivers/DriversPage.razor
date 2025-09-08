@@ -3,12 +3,9 @@
 @attribute [Authorize]
 @using System.ComponentModel.DataAnnotations
 @using Microsoft.AspNetCore.Components.Forms
-@using MediatR
-@using Laroche.FleetManager.Application.Queries.Drivers
-@using Laroche.FleetManager.Application.Commands.Drivers
+@using Laroche.FleetManager.Web.Services.Interfaces
 @using Laroche.FleetManager.Application.DTOs
 @using Laroche.FleetManager.Application.Common
-@inject IMediator Mediator
 
 <PageTitle>Conducteurs</PageTitle>
 
@@ -319,6 +316,8 @@
 
 @code {
     // Variables d'état de la page
+    [Inject] private IDriverApiService DriverApiService { get; set; } = default!;
+
     private PagedResult<DriverDto>? pagedResult;
     private bool isLoading = true;
     private bool isSaving = false;
@@ -435,22 +434,11 @@
     {
         isLoading = true;
         currentPage = page;
-        
+
         try
         {
-            var query = new GetAllDriversQuery
-            {
-                Page = currentPage,
-                PageSize = pageSize
-            };
-            
-            var result = await Mediator.Send(query);
-            
-            if (result.IsSuccess && result.Value != null)
-            {
-                pagedResult = result.Value;
-            }
-            else
+            pagedResult = await DriverApiService.GetPagedAsync(currentPage, pageSize);
+            if (pagedResult == null || pagedResult.Items == null)
             {
                 ShowNotification("Erreur lors du chargement des conducteurs", "danger");
             }
@@ -507,21 +495,21 @@
     {
         isSaving = true;
         StateHasChanged();
-        
+
         try
         {
             if (editingDriver == null)
             {
                 // Création
-                var command = new CreateDriverCommand
+                var createCommand = new CreateDriverCommand
                 {
                     FirstName = driverForm.FirstName,
                     LastName = driverForm.LastName,
                     Email = driverForm.Email,
                     PhoneNumber = driverForm.PhoneNumber,
                     DateOfBirth = driverForm.DateOfBirth,
-                    HireDate = driverForm.HireDate,
-                    // Status = driverForm.Status,
+                    HireDate = driverForm.HireDate ?? DateTime.Now,
+                    Status = driverForm.Status,
                     LicenseNumber = driverForm.LicenseNumber,
                     LicenseType = driverForm.LicenseType,
                     LicenseExpiryDate = driverForm.LicenseExpiryDate,
@@ -530,10 +518,10 @@
                     EmergencyContactPhone = driverForm.EmergencyContactPhone,
                     Notes = driverForm.Notes
                 };
-                
-                var result = await Mediator.Send(command);
-                
-                if (result.IsSuccess)
+
+                var result = await DriverApiService.CreateAsync(createCommand);
+
+                if (result != null)
                 {
                     ShowNotification("Conducteur créé avec succès", "success");
                     CloseModal();
@@ -547,15 +535,15 @@
             else
             {
                 // Modification
-                var command = new UpdateDriverCommand
+                var updateCommand = new UpdateDriverCommand
                 {
                     Id = editingDriver.Id,
                     FirstName = driverForm.FirstName,
                     LastName = driverForm.LastName,
                     Email = driverForm.Email,
                     PhoneNumber = driverForm.PhoneNumber,
-                    // DateOfBirth = driverForm.DateOfBirth,
-                    // HireDate = driverForm.HireDate,
+                    DateOfBirth = driverForm.DateOfBirth,
+                    HireDate = driverForm.HireDate ?? DateTime.Now,
                     Status = driverForm.Status,
                     LicenseNumber = driverForm.LicenseNumber,
                     LicenseType = driverForm.LicenseType,
@@ -565,10 +553,10 @@
                     EmergencyContactPhone = driverForm.EmergencyContactPhone,
                     // Notes = driverForm.Notes
                 };
-                
-                var result = await Mediator.Send(command);
-                
-                if (result.IsSuccess)
+
+                var result = await DriverApiService.UpdateAsync(editingDriver.Id, updateCommand);
+
+                if (result!= null)
                 {
                     ShowNotification("Conducteur modifié avec succès", "success");
                     CloseModal();
@@ -597,10 +585,8 @@
         {
             try
             {
-                var command = new DeleteDriverCommand(id);
-                var result = await Mediator.Send(command);
-                
-                if (result.IsSuccess)
+                var result = await DriverApiService.DeleteAsync(id);
+                if (result)
                 {
                     ShowNotification("Conducteur supprimé avec succès", "success");
                     await LoadDrivers(currentPage);

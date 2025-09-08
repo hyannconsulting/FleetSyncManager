@@ -1,6 +1,51 @@
 using Laroche.FleetManager.Domain.Enums;
 
 namespace Laroche.FleetManager.Application.DTOs;
+/// <summary>
+/// DTO pour la création d'un conducteur
+/// </summary>
+public class CreateDriverDto
+{
+    /// <summary>Prénom du conducteur</summary>
+    public string FirstName { get; set; } = string.Empty;
+    /// <summary>Nom du conducteur</summary>
+    public string LastName { get; set; } = string.Empty;
+    /// <summary>Email du conducteur</summary>
+    public string Email { get; set; } = string.Empty;
+    /// <summary>Téléphone du conducteur</summary>
+    public string? PhoneNumber { get; set; }
+    /// <summary>Numéro de permis</summary>
+    public string LicenseNumber { get; set; } = string.Empty;
+    /// <summary>Statut</summary>
+    public string Status { get; set; } = string.Empty;
+    /// <summary>Adresse</summary>
+    public string? Address { get; set; }
+    /// <summary>Nom du contact d'urgence</summary>
+    public string? EmergencyContactName { get; set; }
+    /// <summary>Téléphone du contact d'urgence</summary>
+    public string? EmergencyContactPhone { get; set; }
+    /// <summary>Notes</summary>
+    public string? Notes { get; set; }
+    /// <summary>Type de permis</summary>
+    public LicenseTypeEnums LicenseType { get; set; }
+    /// <summary>Date d'expiration du permis</summary>
+    public DateTime? LicenseExpiryDate { get; set; }
+    /// <summary>Date d'embauche</summary>
+    public DateTime HireDate { get; set; }
+    /// <summary>Date de naissance</summary>
+    public DateTime DateOfBirth { get; set; }
+    /// <summary>Actif</summary>
+    public bool IsActive { get; set; }
+}
+
+/// <summary>
+/// DTO pour la mise à jour d'un conducteur
+/// </summary>
+public class UpdateDriverDto : CreateDriverDto
+{
+    /// <summary>Identifiant du conducteur</summary>
+    public int Id { get; set; }
+}
 
 /// <summary>
 /// Driver Data Transfer Object

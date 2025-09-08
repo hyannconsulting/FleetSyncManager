@@ -1,6 +1,6 @@
 using Laroche.FleetManager.Application.Common;
 
-namespace Laroche.FleetManager.Web.Services;
+namespace Laroche.FleetManager.Web.Services.Interfaces;
 
 /// <summary>
 /// Interface pour les services API client

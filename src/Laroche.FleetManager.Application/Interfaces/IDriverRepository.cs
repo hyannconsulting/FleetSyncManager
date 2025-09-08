@@ -99,4 +99,13 @@ public interface IDriverRepository
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>True if license number is unique</returns>
     Task<bool> IsLicenseNumberUniqueAsync(string licenseNumber, int? excludeDriverId = null, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Asynchronously retrieves the count of items.
+    /// </summary>
+    /// <remarks>This method is designed to be non-blocking and supports cancellation through the provided
+    /// <paramref name="cancellationToken"/>.</remarks>
+    /// <param name="cancellationToken">A token to monitor for cancellation requests. The default value is <see cref="CancellationToken.None"/>.</param>
+    /// <returns>A task that represents the asynchronous operation. The task result contains the count of items as an integer.</returns>
+    Task<int> GetCountAsync(CancellationToken cancellationToken = default);
 }

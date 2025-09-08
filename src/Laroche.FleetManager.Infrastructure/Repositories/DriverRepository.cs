@@ -1,10 +1,10 @@
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using Laroche.FleetManager.Application.Common;
 using Laroche.FleetManager.Application.Interfaces;
 using Laroche.FleetManager.Domain.Entities;
 using Laroche.FleetManager.Domain.Enums;
 using Laroche.FleetManager.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace Laroche.FleetManager.Infrastructure.Repositories;
 
@@ -16,6 +16,13 @@ public class DriverRepository : IDriverRepository
     private readonly ApplicationDbContext _context;
     private readonly ILogger<DriverRepository> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DriverRepository"/> class with the specified database context and
+    /// logger.
+    /// </summary>
+    /// <param name="context">The <see cref="ApplicationDbContext"/> used to interact with the database. Cannot be <see langword="null"/>.</param>
+    /// <param name="logger">The <see cref="ILogger{DriverRepository}"/> used for logging operations. Cannot be <see langword="null"/>.</param>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="context"/> or <paramref name="logger"/> is <see langword="null"/>.</exception>
     public DriverRepository(ApplicationDbContext context, ILogger<DriverRepository> logger)
     {
         _context = context ?? throw new ArgumentNullException(nameof(context));
@@ -41,7 +48,7 @@ public class DriverRepository : IDriverRepository
             if (!string.IsNullOrWhiteSpace(searchTerm))
             {
                 var lowerSearchTerm = searchTerm.ToLower();
-                query = query.Where(d => 
+                query = query.Where(d =>
                     d.FirstName.ToLower().Contains(lowerSearchTerm) ||
                     d.LastName.ToLower().Contains(lowerSearchTerm) ||
                     d.Email.ToLower().Contains(lowerSearchTerm) ||
@@ -153,7 +160,7 @@ public class DriverRepository : IDriverRepository
             }
 
             // Filtre sur le type de permis
-            if (!string.IsNullOrWhiteSpace(requiredLicenseType) && 
+            if (!string.IsNullOrWhiteSpace(requiredLicenseType) &&
                 Enum.TryParse<LicenseTypeEnums>(requiredLicenseType, out var licenseTypeEnum))
             {
                 query = query.Where(d => d.LicenseType == licenseTypeEnum);
@@ -231,12 +238,13 @@ public class DriverRepository : IDriverRepository
         }
     }
 
+    /// <inheritdoc/>
     public async Task<bool> IsEmailUniqueAsync(string email, int? excludeDriverId = null, CancellationToken cancellationToken = default)
     {
         try
         {
             var query = _context.Drivers.Where(d => d.Email.ToLower() == email.ToLower());
-            
+
             if (excludeDriverId.HasValue)
                 query = query.Where(d => d.Id != excludeDriverId.Value);
 
@@ -248,13 +256,13 @@ public class DriverRepository : IDriverRepository
             throw;
         }
     }
-
+    /// <inheritdoc/>
     public async Task<bool> IsLicenseNumberUniqueAsync(string licenseNumber, int? excludeDriverId = null, CancellationToken cancellationToken = default)
     {
         try
         {
             var query = _context.Drivers.Where(d => d.LicenseNumber.ToLower() == licenseNumber.ToLower());
-            
+
             if (excludeDriverId.HasValue)
                 query = query.Where(d => d.Id != excludeDriverId.Value);
 
@@ -265,5 +273,10 @@ public class DriverRepository : IDriverRepository
             _logger.LogError(ex, "Erreur lors de la vérification de l'unicité du numéro de permis");
             throw;
         }
+    }
+    /// <inheritdoc/>
+    async Task<int> IDriverRepository.GetCountAsync(CancellationToken cancellationToken)
+    {
+        return await _context.Drivers.CountAsync(v => !v.IsDeleted, cancellationToken);
     }
 }

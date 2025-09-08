@@ -1,4 +1,5 @@
 using Laroche.FleetManager.Application.Common;
+using Laroche.FleetManager.Web.Services.Interfaces;
 using System.Text.Json;
 
 namespace Laroche.FleetManager.Web.Services;

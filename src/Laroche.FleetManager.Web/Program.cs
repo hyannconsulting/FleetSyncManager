@@ -1,6 +1,9 @@
+using Laroche.FleetManager.Web.Auth;
 using Laroche.FleetManager.Web.Services;
 using Laroche.FleetManager.Web.Services.Auth;
+using Laroche.FleetManager.Web.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Components.Authorization;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -11,9 +14,12 @@ builder.Host.UseSerilog((context, configuration) =>
     configuration.ReadFrom.Configuration(context.Configuration);
 });
 
-
 // Configuration IHttpContextAccessor pour accès au contexte HTTP
 builder.Services.AddHttpContextAccessor();
+
+// Provider d'authentification JWT pour Blazor
+builder.Services.AddScoped<AuthenticationStateProvider, JwtAuthenticationStateProvider>();
+builder.Services.AddAuthorizationCore();
 
 // Configuration du HttpClient pour l'API d'authentification
 builder.Services.AddHttpClient<IAuthApiService, AuthApiService>(client =>
@@ -105,6 +111,8 @@ app.UseRouting();
 // Configuration middleware authentication
 app.UseAuthentication();
 app.UseAuthorization();
+
+
 
 // Configuration Blazor
 app.MapRazorPages();

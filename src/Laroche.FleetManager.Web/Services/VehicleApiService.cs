@@ -1,5 +1,8 @@
 using Laroche.FleetManager.Application.Commands.Vehicles;
+using Laroche.FleetManager.Application.Common;
 using Laroche.FleetManager.Application.DTOs;
+using Laroche.FleetManager.Application.Queries.Vehicles;
+using Laroche.FleetManager.Web.Services.Interfaces;
 
 namespace Laroche.FleetManager.Web.Services;
 
@@ -63,6 +66,83 @@ public class VehicleApiService : BaseApiClientService<VehicleDto, CreateVehicleC
         catch (Exception ex)
         {
             _logger.LogError(ex, "Erreur lors de la récupération des véhicules nécessitant une maintenance");
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Récupère les véhicules avec pagination et filtres
+    /// </summary>
+    public async Task<PagedResult<VehicleDto>?> GetPagedAsync(GetVehiclesQuery query)
+    {
+        try
+        {
+            var queryParams = new List<string>();
+
+            // Paramètres de pagination
+            queryParams.Add($"page={query.Page}");
+            queryParams.Add($"pageSize={query.PageSize}");
+
+            // Paramètres de recherche et filtres
+            if (!string.IsNullOrWhiteSpace(query.SearchTerm))
+                queryParams.Add($"searchTerm={Uri.EscapeDataString(query.SearchTerm)}");
+
+            if (!string.IsNullOrWhiteSpace(query.Brand))
+                queryParams.Add($"brand={Uri.EscapeDataString(query.Brand)}");
+
+            if (!string.IsNullOrWhiteSpace(query.Status))
+                queryParams.Add($"status={Uri.EscapeDataString(query.Status)}");
+
+            if (!string.IsNullOrWhiteSpace(query.FuelType))
+                queryParams.Add($"fuelType={Uri.EscapeDataString(query.FuelType)}");
+
+            // Paramètres de tri
+            if (!string.IsNullOrWhiteSpace(query.SortBy))
+                queryParams.Add($"sortBy={Uri.EscapeDataString(query.SortBy)}");
+
+            if (!string.IsNullOrWhiteSpace(query.SortDirection))
+                queryParams.Add($"sortDirection={Uri.EscapeDataString(query.SortDirection)}");
+
+            var queryString = queryParams.Count > 0 ? "?" + string.Join("&", queryParams) : "";
+            var response = await _httpClient.GetAsync($"{ApiEndpoint}{queryString}");
+
+            if (response.IsSuccessStatusCode)
+            {
+                var json = await response.Content.ReadAsStringAsync();
+                return System.Text.Json.JsonSerializer.Deserialize<PagedResult<VehicleDto>>(json, _jsonOptions);
+            }
+
+            _logger.LogWarning("Échec de récupération des véhicules paginés: {StatusCode}", response.StatusCode);
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erreur lors de la récupération des véhicules paginés");
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Récupère le nombre total de véhicules
+    /// </summary>
+    public async Task<int?> GetTotalCountAsync()
+    {
+        try
+        {
+            var response = await _httpClient.GetAsync($"{ApiEndpoint}/count");
+
+            if (response.IsSuccessStatusCode)
+            {
+                var json = await response.Content.ReadAsStringAsync();
+                return System.Text.Json.JsonSerializer.Deserialize<int>(json, _jsonOptions);
+            }
+
+            _logger.LogWarning("Échec de récupération du nombre total de véhicules: {StatusCode}", response.StatusCode);
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erreur lors de la récupération du nombre total de véhicules");
             return null;
         }
     }

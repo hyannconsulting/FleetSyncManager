@@ -4,8 +4,8 @@
 @using Laroche.FleetManager.Web.Services.Auth
 @inject IAuthApiService AuthService
 @inject NavigationManager Navigation
-@inject IHttpContextAccessor HttpContextAccessor
 @inject IJSRuntime JSRuntime
+@inject AuthenticationStateProvider AuthStateProvider
 @attribute [AllowAnonymous]
 
 <PageTitle>Connexion - FleetSyncManager</PageTitle>
@@ -152,6 +152,10 @@
         await Task.CompletedTask;
     }
 
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string? ReturnUrl { get; set; }
+
     private async Task HandleLoginSubmit()
     {
         try
@@ -170,8 +174,15 @@
                 await SetAuthenticationCookieAsync(result.Token!, result.ExpiresAt!.Value, result.SessionID!,
                 result.SessionDuration!.Value);
 
+                // Notifier Blazor de l'authentification
+                if (AuthStateProvider is Laroche.FleetManager.Web.Auth.JwtAuthenticationStateProvider jwtProvider)
+                {
+                    jwtProvider.NotifyUserAuthentication(result.Token!);
+                }
+
                 // Redirection après connexion réussie
-                Navigation.NavigateTo("/accueil", true);
+                var redirectUrl = !string.IsNullOrEmpty(ReturnUrl) ? ReturnUrl : "/";
+                Navigation.NavigateTo(redirectUrl, true);
             }
             else
             {

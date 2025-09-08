@@ -1,12 +1,7 @@
 @page "/dashboard"
 @using Microsoft.AspNetCore.Authorization
-@using MediatR
-@using Laroche.FleetManager.Application.Queries.Vehicles
-@using Laroche.FleetManager.Application.Queries.Drivers
-@using Laroche.FleetManager.Application.Queries.Maintenances
-@using Laroche.FleetManager.Application.Queries.Incidents
+@using Laroche.FleetManager.Web.Services.Interfaces
 @using Laroche.FleetManager.Application.DTOs
-@inject IMediator Mediator
 @attribute [Authorize]
 
 <PageTitle>FleetSyncManager - Tableau de bord</PageTitle>
@@ -224,6 +219,12 @@
 </div>
 
 @code {
+
+    [Inject] private IVehicleApiService VehicleApiService { get; set; } = default!;
+    [Inject] private IDriverApiService DriverApiService { get; set; } = default!;
+    [Inject] private IMaintenanceApiService MaintenanceApiService { get; set; } = default!;
+    [Inject] private IIncidentApiService IncidentApiService { get; set; } = default!;
+
     private bool isLoading = true;
     private int vehicleCount = 0;
     private int driverCount = 0;
@@ -255,8 +256,12 @@
             var upcomingMaintenancesTask = LoadUpcomingMaintenances();
             var recentIncidentsTask = LoadRecentIncidents();
 
-            await Task.WhenAll(vehiclesTask, driversTask, maintenancesTask, incidentsTask,
-                              upcomingMaintenancesTask, recentIncidentsTask);
+            await Task.WhenAll(vehiclesTask,
+                driversTask,
+                maintenancesTask,
+                incidentsTask,
+                upcomingMaintenancesTask, 
+                recentIncidentsTask);
         }
         catch (Exception)
         {
@@ -269,16 +274,12 @@
         }
     }
 
+
     private async Task LoadVehicleCount()
     {
         try
         {
-            var query = new GetVehiclesQuery { PageSize = 1 };
-            var result = await Mediator.Send(query);
-            if (result.IsSuccess && result.Value != null)
-            {
-                vehicleCount = result.Value.TotalCount;
-            }
+            vehicleCount = await VehicleApiService.GetTotalCountAsync() ?? 0;
         }
         catch
         {
@@ -290,12 +291,7 @@
     {
         try
         {
-            var query = new GetAllDriversQuery { PageSize = 1 };
-            var result = await Mediator.Send(query);
-            if (result.IsSuccess && result.Value != null)
-            {
-                driverCount = result.Value.TotalCount;
-            }
+            driverCount = await DriverApiService.GetDriverCountAsync();
         }
         catch
         {
@@ -307,12 +303,7 @@
     {
         try
         {
-            var query = new GetAllMaintenancesQuery { PageSize = 1 };
-            var result = await Mediator.Send(query);
-            if (result.IsSuccess && result.Value != null)
-            {
-                maintenanceCount = result.Value.TotalCount;
-            }
+            maintenanceCount = await MaintenanceApiService.GetMaintenanceCountAsync();
         }
         catch
         {
@@ -324,12 +315,7 @@
     {
         try
         {
-            var query = new GetAllIncidentsQuery { PageSize = 1 };
-            var result = await Mediator.Send(query);
-            if (result.IsSuccess && result.Value != null)
-            {
-                incidentCount = result.Value.TotalCount;
-            }
+            incidentCount = await IncidentApiService.GetIncidentCountAsync();
         }
         catch
         {
@@ -341,12 +327,8 @@
     {
         try
         {
-            var query = new GetUpcomingMaintenancesQuery { MaxRecords = 10 };
-            var result = await Mediator.Send(query);
-            if (result.IsSuccess && result.Value != null)
-            {
-                upcomingMaintenances = result.Value.ToList();
-            }
+            var datas = await MaintenanceApiService.GetUpcomingMaintenancesAsync(10);
+            upcomingMaintenances = datas?.ToList();
         }
         catch
         {
@@ -358,16 +340,8 @@
     {
         try
         {
-            var query = new GetAllIncidentsQuery
-            {
-                PageSize = 10,
-                Status = "Open" // Seulement les incidents ouverts
-            };
-            var result = await Mediator.Send(query);
-            if (result.IsSuccess && result.Value != null)
-            {
-                recentIncidents = result.Value.Items.ToList();
-            }
+            var datas = await IncidentApiService.GetRecentOpenIncidentsAsync(10);
+            recentIncidents = datas == null ? new List<IncidentDto>() : datas.ToList();
         }
         catch
         {

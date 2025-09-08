@@ -1,25 +1,25 @@
-using Microsoft.EntityFrameworkCore;
+using Laroche.FleetManager.Application.Common;
+using Laroche.FleetManager.Application.DTOs;
 using Laroche.FleetManager.Application.Interfaces;
+using Laroche.FleetManager.Application.Queries.Vehicles;
 using Laroche.FleetManager.Domain.Entities;
 using Laroche.FleetManager.Domain.Enums;
+using Laroche.FleetManager.Domain.Extensions;
 using Laroche.FleetManager.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
 
-// Alias pour simplifier l'usage
 using VehicleStatus = Laroche.FleetManager.Domain.Enums.VehicleStatusEnums;
+
+
 
 namespace Laroche.FleetManager.Infrastructure.Repositories;
 
 /// <summary>
 /// Implémentation du repository pour les véhicules
 /// </summary>
-public class VehicleRepository : IVehicleRepository
+public class VehicleRepository(ApplicationDbContext context) : IVehicleRepository
 {
-    private readonly ApplicationDbContext _context;
-
-    public VehicleRepository(ApplicationDbContext context)
-    {
-        _context = context;
-    }
+    private readonly ApplicationDbContext _context = context;
 
     public async Task<(IEnumerable<Vehicle> Items, int TotalCount)> GetPagedAsync(
         int page,
@@ -66,23 +66,23 @@ public class VehicleRepository : IVehicleRepository
         // Application du tri
         query = sortBy.ToLower() switch
         {
-            "brand" => sortDirection.ToLower() == "desc" 
-                ? query.OrderByDescending(v => v.Brand) 
+            "brand" => sortDirection.ToLower() == "desc"
+                ? query.OrderByDescending(v => v.Brand)
                 : query.OrderBy(v => v.Brand),
-            "model" => sortDirection.ToLower() == "desc" 
-                ? query.OrderByDescending(v => v.Model) 
+            "model" => sortDirection.ToLower() == "desc"
+                ? query.OrderByDescending(v => v.Model)
                 : query.OrderBy(v => v.Model),
-            "year" => sortDirection.ToLower() == "desc" 
-                ? query.OrderByDescending(v => v.Year) 
+            "year" => sortDirection.ToLower() == "desc"
+                ? query.OrderByDescending(v => v.Year)
                 : query.OrderBy(v => v.Year),
-            "status" => sortDirection.ToLower() == "desc" 
-                ? query.OrderByDescending(v => v.Status) 
+            "status" => sortDirection.ToLower() == "desc"
+                ? query.OrderByDescending(v => v.Status)
                 : query.OrderBy(v => v.Status),
-            "currentmileage" => sortDirection.ToLower() == "desc" 
-                ? query.OrderByDescending(v => v.CurrentMileage) 
+            "currentmileage" => sortDirection.ToLower() == "desc"
+                ? query.OrderByDescending(v => v.CurrentMileage)
                 : query.OrderBy(v => v.CurrentMileage),
-            _ => sortDirection.ToLower() == "desc" 
-                ? query.OrderByDescending(v => v.LicensePlate) 
+            _ => sortDirection.ToLower() == "desc"
+                ? query.OrderByDescending(v => v.LicensePlate)
                 : query.OrderBy(v => v.LicensePlate)
         };
 
@@ -114,20 +114,20 @@ public class VehicleRepository : IVehicleRepository
     public async Task<Vehicle> AddAsync(Vehicle vehicle, CancellationToken cancellationToken = default)
     {
         vehicle.CreatedAt = DateTime.UtcNow;
-        
+
         _context.Vehicles.Add(vehicle);
         await _context.SaveChangesAsync(cancellationToken);
-        
+
         return vehicle;
     }
 
     public async Task<Vehicle> UpdateAsync(Vehicle vehicle, CancellationToken cancellationToken = default)
     {
         vehicle.UpdatedAt = DateTime.UtcNow;
-        
+
         _context.Vehicles.Update(vehicle);
         await _context.SaveChangesAsync(cancellationToken);
-        
+
         return vehicle;
     }
 
@@ -135,12 +135,12 @@ public class VehicleRepository : IVehicleRepository
     {
         var vehicle = await _context.Vehicles
             .FirstOrDefaultAsync(v => v.Id == id && !v.IsDeleted, cancellationToken);
-            
+
         if (vehicle != null)
         {
             vehicle.IsDeleted = true;
             vehicle.UpdatedAt = DateTime.UtcNow;
-            
+
             await _context.SaveChangesAsync(cancellationToken);
         }
     }
@@ -149,12 +149,66 @@ public class VehicleRepository : IVehicleRepository
     {
         var query = _context.Vehicles
             .Where(v => v.LicensePlate.ToLower() == licensePlate.ToLower() && !v.IsDeleted);
-            
+
         if (excludeId.HasValue)
         {
             query = query.Where(v => v.Id != excludeId.Value);
         }
-        
+
         return await query.AnyAsync(cancellationToken);
+    }
+
+    public async Task<PagedResult<VehicleDto>> GetPagedAsync(GetVehiclesQuery query)
+    {
+        // Conversion du statut string vers enum si nécessaire
+        VehicleStatus? status = null;
+        if (!string.IsNullOrEmpty(query.Status) && Enum.TryParse<VehicleStatus>(query.Status, true, out var parsedStatus))
+        {
+            status = parsedStatus;
+        }
+
+        // Utilisation de la méthode GetPagedAsync existante
+        var (vehicles, totalCount) = await GetPagedAsync(
+            query.Page,
+            query.PageSize,
+            query.SearchTerm,
+            query.Brand,
+            status,
+            query.FuelType?.ToEnum<FuelType>(),
+            query.SortBy ?? "LicensePlate",
+            query.SortDirection ?? "asc");
+
+        // Conversion des entités Vehicle vers VehicleDto
+        var vehicleDtos = vehicles.Select(v => new VehicleDto
+        {
+            Id = v.Id,
+            Vin = v.Vin,
+            Brand = v.Brand,
+            Model = v.Model,
+            Year = v.Year,
+            LicensePlate = v.LicensePlate,
+            FuelType = v.FuelType,
+            Status = v.Status,
+            CurrentMileage = v.CurrentMileage,
+        });
+
+        return new PagedResult<VehicleDto>(vehicleDtos, query.Page, query.PageSize, totalCount);
+    }
+
+    async Task<IEnumerable<Vehicle>> IVehicleRepository.GetAllAsync(CancellationToken cancellationToken)
+    {
+        return await _context.Vehicles
+            .Where(v => !v.IsDeleted)
+            .Include(v => v.VehicleAssignments.Where(va => va.EndDate == null || va.EndDate > DateTime.UtcNow))
+                .ThenInclude(va => va.Driver)
+            .Include(v => v.MaintenanceRecords)
+            .Include(v => v.Incidents)
+            .OrderBy(v => v.LicensePlate)
+            .ToListAsync(cancellationToken);
+    }
+
+    async Task<int> IVehicleRepository.GetCountAsync(CancellationToken cancellationToken)
+    {
+        return await _context.Vehicles.CountAsync(v => !v.IsDeleted, cancellationToken);
     }
 }

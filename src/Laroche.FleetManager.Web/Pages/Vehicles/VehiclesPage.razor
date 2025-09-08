@@ -1,14 +1,13 @@
 @page "/vehicles"
+@using Laroche.FleetManager.Application.Queries.Vehicles
 @using Microsoft.AspNetCore.Authorization
 @attribute [Authorize]
 @using System.ComponentModel.DataAnnotations
 @using Microsoft.AspNetCore.Components.Forms
-@using MediatR
-@using Laroche.FleetManager.Application.Queries.Vehicles
-@using Laroche.FleetManager.Application.Commands.Vehicles
+@using Laroche.FleetManager.Web.Services.Interfaces
 @using Laroche.FleetManager.Application.DTOs
 @using Laroche.FleetManager.Application.Common
-@inject IMediator Mediator
+
 @inject IJSRuntime JSRuntime
 
 <PageTitle>Véhicules</PageTitle>
@@ -280,6 +279,8 @@
 }
 
 @code {
+    [Inject] private IVehicleApiService VehicleApiService { get; set; } = default!;
+
     private PagedResult<VehicleDto>? pagedResult;
     private bool isLoading = true;
     private bool isSaving = false;
@@ -349,23 +350,17 @@
     {
         isLoading = true;
         currentPage = page;
-        ClearNotification(); // Clear previous notifications
-        
+        ClearNotification();
+        var query = new GetVehiclesQuery
+        {
+            Page = currentPage,
+            PageSize = pageSize
+        };
+
         try
         {
-            var query = new GetVehiclesQuery
-            {
-                Page = currentPage,
-                PageSize = pageSize
-            };
-            
-            var result = await Mediator.Send(query);
-            
-            if (result.IsSuccess && result.Value != null)
-            {
-                pagedResult = result.Value;
-            }
-            else
+            pagedResult = await VehicleApiService.GetPagedAsync(query);
+            if (pagedResult == null || pagedResult.Items == null)
             {
                 ShowNotification("Erreur lors du chargement des véhicules", "danger");
             }
@@ -418,13 +413,13 @@
     {
         isSaving = true;
         StateHasChanged();
-        
+
         try
         {
             if (editingVehicle == null)
             {
                 // Création
-                var command = new CreateVehicleCommand
+                var createCommand = new CreateVehicleCommand
                 {
                     LicensePlate = vehicleForm.LicensePlate,
                     Brand = vehicleForm.Brand,
@@ -437,10 +432,10 @@
                     VIN = vehicleForm.VIN,
                     Notes = vehicleForm.Notes
                 };
-                
-                var result = await Mediator.Send(command);
-                
-                if (result.IsSuccess)
+
+                var createdVehicle = await VehicleApiService.CreateAsync(createCommand);
+
+                if (createdVehicle != null && createdVehicle.Id > 0)
                 {
                     ShowNotification("Véhicule créé avec succès", "success");
                     CloseModal();
@@ -454,7 +449,7 @@
             else
             {
                 // Modification
-                var command = new UpdateVehicleCommand
+                var updateCommand = new UpdateVehicleCommand
                 {
                     Id = editingVehicle.Id,
                     LicensePlate = vehicleForm.LicensePlate,
@@ -462,16 +457,16 @@
                     Model = vehicleForm.Model,
                     Year = vehicleForm.Year,
                     Status = vehicleForm.Status,
-                    FuelType = vehicleForm.FuelType ?? "1",
+                    FuelType = vehicleForm.FuelType ?? string.Empty,
                     Mileage = vehicleForm.Mileage ?? 0,
                     PurchaseDate = vehicleForm.PurchaseDate,
                     VIN = vehicleForm.VIN,
                     Notes = vehicleForm.Notes
                 };
-                
-                var result = await Mediator.Send(command);
-                
-                if (result.IsSuccess)
+
+                var updatedVehicle = await VehicleApiService.UpdateAsync(editingVehicle.Id, updateCommand);
+
+                if (updatedVehicle != null && updatedVehicle.Id > 0)
                 {
                     ShowNotification("Véhicule modifié avec succès", "success");
                     CloseModal();
@@ -515,13 +510,11 @@
     private async Task ConfirmDelete()
     {
         showDeleteConfirm = false;
-        
+
         try
         {
-            var command = new DeleteVehicleCommand(vehicleToDeleteId);
-            var result = await Mediator.Send(command);
-            
-            if (result.IsSuccess)
+            var deleted = await VehicleApiService.DeleteAsync(vehicleToDeleteId);
+            if (deleted)
             {
                 ShowNotification("Véhicule supprimé avec succès", "success");
                 await LoadVehicles(currentPage);

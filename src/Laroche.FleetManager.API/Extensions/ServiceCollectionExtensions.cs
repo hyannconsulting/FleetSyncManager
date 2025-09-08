@@ -101,6 +101,8 @@ public static class ServiceCollectionExtensions
         // Repositories
         services.AddScoped<IVehicleRepository, VehicleRepository>();
         services.AddScoped<IDriverRepository, DriverRepository>();
+        services.AddScoped<Application.Interfaces.IMaintenanceRepository, MaintenanceRepository>();
+        services.AddScoped<IMaintenanceService, Application.Services.MaintenanceService>();
 
         services.AddSingleton<ITokenProvider, TokenProvider>();
 
