@@ -21,4 +21,8 @@
     <ProjectReference Include="..\Laroche.FleetManager.Application\Laroche.FleetManager.Application.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="logs\" />
+  </ItemGroup>
+
 </Project>

@@ -97,7 +97,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IAuthenticationService, AuthenticationService>();
         services.AddScoped<ILoginAuditService, LoginAuditService>();
         services.AddScoped<IUserService, UserService>();
-
+        services.AddScoped<IDriverService, DriverService>();
         // Repositories
         services.AddScoped<IVehicleRepository, VehicleRepository>();
         services.AddScoped<IDriverRepository, DriverRepository>();

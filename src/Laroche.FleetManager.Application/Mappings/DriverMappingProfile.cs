@@ -9,6 +9,9 @@ namespace Laroche.FleetManager.Application.Mappings;
 /// </summary>
 public class DriverMappingProfile : Profile
 {
+    /// <summary>
+    /// Initializes the Driver mapping profile
+    /// </summary>
     public DriverMappingProfile()
     {
         // Driver to DriverDto mapping
@@ -19,6 +22,14 @@ public class DriverMappingProfile : Profile
                     .Where(va => va.EndDate == null || va.EndDate > DateTime.UtcNow)
                     .Select(va => va.Vehicle != null ? va.Vehicle.LicensePlate : "N/A")
                     .ToList()));
+
+        // CreateDriverDto to Driver mapping (for creation)
+        CreateMap<CreateDriverDto, Driver>()
+            .ForMember(dest => dest.VehicleAssignments, opt => opt.Ignore())
+            .ForMember(dest => dest.Incidents, opt => opt.Ignore())
+            .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
+            .ForMember(dest => dest.UpdatedAt, opt => opt.Ignore())
+            .ForMember(dest => dest.Id, opt => opt.Ignore());
 
         // DriverDto to Driver mapping (for updates)
         CreateMap<DriverDto, Driver>()
